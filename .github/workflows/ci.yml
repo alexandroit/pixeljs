@@ -1,0 +1,164 @@
+name: PixelJS CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      extended_fuzz:
+        description: Run each native fuzz target for 15 minutes instead of 60 seconds
+        type: boolean
+        default: false
+  schedule:
+    - cron: '23 5 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pixeljs-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  verify:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CC: clang-18
+      CXX: clang++-18
+      CI: 'true'
+      PIXELJS_USE_BUNDLED_CHROMIUM: '1'
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+      LSAN_OPTIONS: exitcode=23
+    steps:
+      - name: Check out source without retained credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the pinned toolchain
+        uses: ./.github/actions/setup-pixeljs
+      - name: Check release metadata consistency
+        run: node tools/check-release.mjs
+      - name: Analyze the C runtime
+        run: |
+          clang-18 --analyze -std=c17 -Icore/include -Icore/src -Ibridge/wasm \
+            core/src/context/context.c core/src/memory/memory.c core/src/assets/image.c \
+            core/src/graphics/commands.c core/src/graphics/raster.c core/src/audio/dsp.c \
+            bridge/wasm/exports.c \
+            -Xanalyzer -analyzer-werror -Xanalyzer -analyzer-output=text \
+            2>&1 | tee artifacts/ci/clang-analysis.txt
+          clang-18 --analyze -std=c17 -Icore/include -Ibridge/audio bridge/audio/exports.c \
+            -Xanalyzer -analyzer-werror -Xanalyzer -analyzer-output=text \
+            2>&1 | tee -a artifacts/ci/clang-analysis.txt
+      - name: Build real WASM and run all implemented verification gates
+        run: npm run verify 2>&1 | tee artifacts/ci/verify.txt
+      - name: Record the tested tarballs for publication
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/npm-candidates
+          cp artifacts/pixeljs-core-*.tgz artifacts/pixeljs-create-*.tgz artifacts/npm-candidates/
+          (cd artifacts/npm-candidates && sha512sum -- *.tgz > SHA512SUMS)
+          core="$(sha512sum artifacts/npm-candidates/pixeljs-core-*.tgz | awk '{print $1}')"
+          create="$(sha512sum artifacts/npm-candidates/pixeljs-create-*.tgz | awk '{print $1}')"
+          # shellcheck disable=SC2016 # Markdown backticks, not shell expansions.
+          {
+            echo '### Tested npm tarballs'
+            echo
+            echo 'Publish exactly these bytes by dispatching `publish.yml` on the release tag:'
+            echo
+            echo '```sh'
+            echo "gh workflow run publish.yml --ref vX.Y.Z -f core_sha512=$core -f create_sha512=$create"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the tested tarballs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npm-candidates-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 30
+          if-no-files-found: error
+          path: artifacts/npm-candidates/
+      - name: Retain verification evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: verification-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            artifacts/ci/
+            artifacts/package-tests.json
+            build/native/Testing/Temporary/LastTest.log
+            build/safety/Testing/Temporary/LastTest.log
+            playwright-report/
+            test-results/
+
+  fuzz:
+    # Scheduled CPU usage is opt-in through a repository Actions variable.
+    if: github.event_name != 'schedule' || vars.PIXELJS_ENABLE_SCHEDULED_FUZZ == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [commands, resources, audio]
+    env:
+      CC: clang-18
+      CXX: clang++-18
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+      LSAN_OPTIONS: exitcode=23
+      FUZZ_TARGET: ${{ matrix.target }}
+      EXTENDED_FUZZ: ${{ inputs.extended_fuzz || false }}
+    steps:
+      - name: Check out source without retained credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the native fuzz toolchain
+        uses: ./.github/actions/setup-pixeljs
+        with:
+          emscripten: 'false'
+          dependencies: 'false'
+          browsers: 'false'
+      - name: Compile the real parsers with libFuzzer, ASan and UBSan
+        run: |
+          mkdir -p artifacts/fuzz build/fuzz-corpus
+          cmake -S . -B build/fuzz -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang-18 -DBUILD_TESTING=OFF -DPX_BUILD_FUZZER=ON
+          cmake --build build/fuzz --target "pixeljs_fuzz_$FUZZ_TARGET" --parallel 4
+          node core/fuzz/generate-seeds.mjs
+          git diff --exit-code -- core/fuzz/corpus
+          cp core/fuzz/corpus/"$FUZZ_TARGET"/*.bin build/fuzz-corpus/
+      - name: Run the bounded fuzz campaign
+        run: |
+          duration=60
+          if [[ "$GITHUB_EVENT_NAME" == schedule || "$EXTENDED_FUZZ" == true ]]; then
+            duration=900
+          fi
+          max_length=131104
+          if [[ "$FUZZ_TARGET" == resources ]]; then
+            max_length=1048610
+          elif [[ "$FUZZ_TARGET" == audio ]]; then
+            max_length=65536
+          fi
+          "build/fuzz/pixeljs_fuzz_$FUZZ_TARGET" build/fuzz-corpus \
+            -max_total_time="$duration" -max_len="$max_length" -rss_limit_mb=512 \
+            -timeout=10 -print_final_stats=1 -artifact_prefix=artifacts/fuzz/ \
+            2>&1 | tee artifacts/fuzz/run.txt
+      - name: Retain the actual fuzz evidence and evolved corpus
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            artifacts/fuzz/
+            artifacts/ci/
+            build/fuzz-corpus/

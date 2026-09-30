@@ -1,0 +1,103 @@
+:root {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #252823;
+  background: #f5f1e8;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 850px;
+  margin: 24px auto;
+  padding: 0 25px;
+}
+.eyebrow {
+  font: 10px monospace;
+  letter-spacing: 1.5px;
+}
+h1 {
+  font-size: 48px;
+  letter-spacing: -2px;
+  margin: 18px 0;
+}
+p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #61665c;
+}
+canvas {
+  display: block;
+  background: #0d111c;
+  width: min(100%, 448px);
+  aspect-ratio: 7/8;
+  margin-inline: auto;
+  image-rendering: pixelated;
+  touch-action: none;
+  border: 12px solid #242c42;
+  margin-top: 28px;
+}
+canvas:focus-visible,
+button:focus-visible {
+  outline: 3px solid #795fce;
+  outline-offset: 4px;
+}
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+}
+.controls p {
+  font: 12px monospace;
+}
+button {
+  font: 12px monospace;
+  background: #252823;
+  color: #f5f1e8;
+  border: 0;
+  padding: 12px 22px;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.note {
+  font: 10px/1.8 monospace;
+  border-top: 1px solid #d8d9ce;
+  padding-top: 15px;
+}
+@media (max-width: 550px) {
+  main {
+    margin: 30px auto;
+    padding: 0 18px;
+  }
+  h1 {
+    font-size: 38px;
+  }
+  p {
+    font-size: 12px;
+  }
+  canvas {
+    border-width: 7px;
+  }
+}
+
+.direction-pad {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.direction-pad button {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 10px;
+  touch-action: manipulation;
+  font-size: 20px;
+}

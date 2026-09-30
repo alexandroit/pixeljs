@@ -1,0 +1,59 @@
+{
+  "format": "pixeljs-assets",
+  "version": 1,
+  "images": {
+    "tiles": {
+      "src": "tiles.png"
+    },
+    "player": {
+      "src": "player.png",
+      "transparentIndex": 0
+    },
+    "ghosts": {
+      "src": "ghosts.png",
+      "transparentIndex": 0
+    }
+  },
+  "tilemaps": {
+    "maze": {
+      "src": "maze.json",
+      "tileset": "tiles"
+    }
+  },
+  "fonts": {
+    "arcade": {
+      "src": "arcade-font.json"
+    }
+  },
+  "sounds": {
+    "waka-a": {
+      "src": "sounds/waka-a.json"
+    },
+    "waka-b": {
+      "src": "sounds/waka-b.json"
+    },
+    "power": {
+      "src": "sounds/power.json"
+    },
+    "ghost": {
+      "src": "sounds/ghost.json"
+    },
+    "death": {
+      "src": "sounds/death.json"
+    },
+    "level": {
+      "src": "sounds/level.json"
+    },
+    "start": {
+      "src": "sounds/start.json"
+    }
+  },
+  "music": {
+    "siren": {
+      "src": "siren.json"
+    },
+    "fright": {
+      "src": "fright.json"
+    }
+  }
+}

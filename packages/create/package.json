@@ -1,0 +1,47 @@
+{
+  "name": "@pixeljs/create",
+  "version": "0.0.3",
+  "description": "Create a ready-to-run PixelJS game project in JavaScript or TypeScript.",
+  "keywords": [
+    "pixeljs",
+    "create",
+    "scaffold",
+    "game",
+    "starter",
+    "vite"
+  ],
+  "license": "MIT",
+  "author": "Alexandro Paixao Marques",
+  "homepage": "https://pixeljs.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexandroit/pixeljs.git",
+    "directory": "packages/create"
+  },
+  "bugs": {
+    "url": "https://github.com/alexandroit/pixeljs/issues"
+  },
+  "type": "module",
+  "bin": {
+    "create-pixeljs": "./bin/create-pixeljs.js",
+    "pixeljs-create": "./bin/create-pixeljs.js"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "src",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

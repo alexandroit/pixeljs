@@ -1,0 +1,12 @@
+{
+  "format": "pixeljs-sound",
+  "version": 1,
+  "waveform": "triangle",
+  "frequency": 440,
+  "volume": 0.25,
+  "attack": 0.005,
+  "decay": 0.02,
+  "sustain": 0.1,
+  "release": 0.02,
+  "duration": 0.045
+}

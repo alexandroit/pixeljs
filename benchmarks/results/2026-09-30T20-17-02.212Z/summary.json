@@ -1,0 +1,1730 @@
+{
+  "environment": {
+    "tool": "tools/bench-browser.mjs",
+    "recordedAt": "2026-09-30T20:17:02.212Z",
+    "git": {
+      "commit": "ba93a99b6043abae1d9f3b09737d851d7a2828d6",
+      "branch": "main",
+      "dirty": false
+    },
+    "build": {
+      "package": "@pixeljs/core",
+      "version": "0.0.1",
+      "manifest": "artifacts/build-manifest.json",
+      "matchesManifest": true,
+      "mismatches": [],
+      "files": {
+        "dist/index.js": "e1e97f432d0ef150708bfaf5f418d1d275c34e916d848814c7ead807107fd6fb",
+        "dist/api/engine.js": "53c9613141c7142912af7b52b90fad564ccc68a6869f28216486cb683414b22c",
+        "dist/internal/commands.js": "12f593ba62fc5d837a035df577cfd78c388aac031226c24c20375e12c714468d",
+        "dist/internal/wasm/adapter.js": "a759603306a60c7c81369653a201ffc2de93e99b771e8bb416052b22e8cdc075",
+        "dist/internal/wasm/engine.mjs": "89208dccb0aeffb525818c7e10e59b191d5821e7f1c3c9c5950a45087c820ecc",
+        "dist/internal/wasm/engine.wasm": "85add7fd0795ff4aaea92c9320a24707fa6d281bad9c76c929cd968da3c0d7f2",
+        "dist/internal/wasm/audio.wasm": "893cd370e6f8d780487ace24e92906e3f80e8337c51a932ba060d344377b0a78",
+        "dist/internal/audio/controller.js": "6656a17a5e9ac4d1aec0834b5d7246f51a315051c522e7cad93c449cd97a795b",
+        "dist/internal/audio/processor.js": "07238174a7fd0ba2de3a4748ec06f30922b90da265c429a476ea3d8d6cafc24e"
+      }
+    },
+    "buildFlags": "CMAKE_BUILD_TYPE=Release (tools/build-wasm.mjs); production validation enabled",
+    "pinnedToolchain": {
+      "emscripten": "6.0.10",
+      "node": "24.20.0",
+      "playwright": "1.63.0"
+    },
+    "node": "v24.20.0",
+    "os": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "arch": "arm64",
+      "version": "27.0.1",
+      "model": "Mac16,10"
+    },
+    "cpu": {
+      "model": "Apple M4",
+      "logical": 10
+    },
+    "memory": {
+      "totalBytes": 17179869184,
+      "freeBytesAtStart": 1564966912
+    },
+    "power": "Now drawing from 'AC Power'",
+    "loadAverage": {
+      "start": [
+        2.59,
+        2.93,
+        3.34
+      ],
+      "end": [
+        4.71,
+        4.83,
+        4.48
+      ]
+    },
+    "busy": true,
+    "finishedAt": "2026-09-30T20:36:27.767Z",
+    "busyThreshold": 2.5
+  },
+  "benchmarks": [
+    {
+      "id": "B01",
+      "title": "256 × 144 character/HUD scene: full pipeline and cold start (chromium 154.0.8037.58)",
+      "runtime": "chromium 154.0.8037.58 via Playwright (headless, channel chrome), GPU \"ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)\"; pages served by tools/serve.mjs with the production CSP and caching headers",
+      "measures": [
+        "The same scene as the core B01 (tools/bench/site/scene.mjs) through the public API in a running engine: update() game logic, draw() (SDK argument validation and command recording), then the engine’s own work after draw() returns (C validation and rasterization, then presentation), timed to the microtask that runs when the frame callback returns.",
+        "With WebGL2, the frame’s first texSubImage2D splits C submission from presentation (texture upload and draw-call submission); GPU execution time comes from EXT_disjoint_timer_query_webgl2 where the browser exposes it (disjoint samples discarded). Canvas2D reports submit + present together (its present includes palette expansion and putImageData).",
+        "Frame intervals from requestAnimationFrame timestamps, and cold start: a fresh browser context (empty HTTP cache) loads the game page at the site root; time from navigation start to the first submitted frame, with createEngine, the engine.wasm fetch and WebAssembly instantiation."
+      ],
+      "excludes": [
+        "WebGL call time is CPU submission, not GPU completion; the GPU row is the timer-query measurement and is absent where the extension is not exposed. Compositor and display latency are not measured.",
+        "Frame intervals are paced by the display/compositor (headless Chromium runs at about 60 Hz), so they show dropped frames rather than cost.",
+        "Cold start here keeps the browser process, GPU process and their shader caches warm; it is not a first launch after boot. See B09 for bytes, warm cache and the nested path.",
+        "performance.now() is clamped by the browser (Chromium: 100 µs unless the page is cross-origin isolated, 5 µs with --isolate); per-frame percentiles are multiples of the resolution listed under Environment, while means over many frames are far less affected by it."
+      ],
+      "rows": [
+        {
+          "scenario": "WebGL2: engine CPU (draw recording + submit + present)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0.10000000894069672,
+            "p95": 0.20000000298023224,
+            "p99": 0.20000000298023224,
+            "mean": 0.11721265981225157,
+            "max": 0.7000000029802322,
+            "p95Min": 0.20000000298023224,
+            "p95Max": 0.20000000298023224
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4,
+            "text": "p95 ≤ 4 ms (engine CPU, desktop)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "WebGL2: update() game logic",
+          "metric": "ms per call",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.09999999403953552,
+            "mean": 0.001277777784400516,
+            "max": 0.10000000894069672,
+            "p95Min": 0,
+            "p95Max": 0
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "WebGL2: draw() SDK recording",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0,
+            "p95": 0.10000000894069672,
+            "p99": 0.10000000894069672,
+            "mean": 0.02394444445768992,
+            "max": 0.20000000298023224,
+            "p95Min": 0.10000000894069672,
+            "p95Max": 0.10000000894069672
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "WebGL2: submit + present after draw()",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0.09999999403953552,
+            "p95": 0.20000000298023224,
+            "p99": 0.20000000298023224,
+            "mean": 0.09311111096706655,
+            "max": 0.7000000029802322,
+            "p95Min": 0.20000000298023224,
+            "p95Max": 0.20000000298023224
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "WebGL2: C submission (WebGL split)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0.09999999403953552,
+            "p95": 0.10000000894069672,
+            "p99": 0.20000000298023224,
+            "mean": 0.061999999947018096,
+            "max": 0.5,
+            "p95Min": 0.10000000894069672,
+            "p95Max": 0.19999998807907104
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "WebGL2: WebGL upload + draw call (CPU)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0,
+            "p95": 0.10000000894069672,
+            "p99": 0.10000000894069672,
+            "mean": 0.030094392047465873,
+            "max": 0.7000000029802322,
+            "p95Min": 0.10000000894069672,
+            "p95Max": 0.10000000894069672
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "WebGL2: GPU time (timer query)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9000,
+            "p50": 0.029083,
+            "p95": 0.030791,
+            "p99": 0.049374,
+            "mean": 0.029828162777777716,
+            "max": 0.260125,
+            "p95Min": 0.030625,
+            "p95Max": 0.031875
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "WebGL2: frame interval (rAF)",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 16.69999999999709,
+            "p95": 16.79999999998836,
+            "p99": 16.80000000000291,
+            "mean": 16.665999999999993,
+            "max": 16.800000000017462,
+            "p95Min": 16.700000000004366,
+            "p95Max": 16.799999999999272
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Canvas2D: engine CPU (draw recording + submit + present)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9000,
+            "p50": 0.20000000298023224,
+            "p95": 0.30000001192092896,
+            "p99": 0.4000000059604645,
+            "mean": 0.18711111075348325,
+            "max": 0.9000000059604645,
+            "p95Min": 0.30000001192092896,
+            "p95Max": 0.30000001192092896
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4,
+            "text": "p95 ≤ 4 ms (engine CPU, desktop)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Canvas2D: update() game logic",
+          "metric": "ms per call",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9000,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0,
+            "mean": 0.0008333333498901791,
+            "max": 0.10000000894069672,
+            "p95Min": 0,
+            "p95Max": 0
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Canvas2D: draw() SDK recording",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9000,
+            "p50": 0,
+            "p95": 0.10000000894069672,
+            "p99": 0.10000000894069672,
+            "mean": 0.021333333311809435,
+            "max": 0.20000000298023224,
+            "p95Min": 0.10000000894069672,
+            "p95Max": 0.10000000894069672
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Canvas2D: submit + present after draw()",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9000,
+            "p50": 0.19999998807907104,
+            "p95": 0.29999999701976776,
+            "p99": 0.30000001192092896,
+            "mean": 0.1657222219887707,
+            "max": 0.7000000029802322,
+            "p95Min": 0.29999999701976776,
+            "p95Max": 0.30000001192092896
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Canvas2D: frame interval (rAF)",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9000,
+            "p50": 16.69999999999709,
+            "p95": 16.79999999998836,
+            "p99": 16.80000000000291,
+            "mean": 16.666,
+            "max": 16.800000000017462,
+            "p95Min": 16.700000000004366,
+            "p95Max": 16.79999999998836
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Cold start: navigation to first frame",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 44.599999994039536,
+            "p95": 53.900000005960464,
+            "p99": 53.900000005960464,
+            "mean": 45.12999999970198,
+            "max": 65.79999999701977,
+            "p95Min": 48.79999999701977,
+            "p95Max": 65.79999999701977
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Cold start: createEngine()",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 9.299999997019768,
+            "p95": 11.700000002980232,
+            "p99": 11.700000002980232,
+            "mean": 9.61000000089407,
+            "max": 15.899999991059303,
+            "p95Min": 10.700000002980232,
+            "p95Max": 15.899999991059303
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Cold start: engine.wasm fetch",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 0.9000000059604645,
+            "p95": 1.7999999970197678,
+            "p99": 1.7999999970197678,
+            "mean": 0.9899999976158143,
+            "max": 2,
+            "p95Min": 1.2999999970197678,
+            "p95Max": 2
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Cold start: WebAssembly.instantiate (compile + instantiate)",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 0.3999999910593033,
+            "p95": 0.5999999940395355,
+            "p99": 0.5999999940395355,
+            "mean": 0.3799999997019768,
+            "max": 0.6000000089406967,
+            "p95Min": 0.5,
+            "p95Max": 0.6000000089406967
+          },
+          "target": null,
+          "status": "INFO"
+        }
+      ],
+      "checks": [
+        {
+          "name": "WebGL2 variant renders with WebGL2",
+          "observed": "webgl2",
+          "expected": "webgl2",
+          "status": "PASS"
+        },
+        {
+          "name": "Canvas2D variant renders with Canvas2D",
+          "observed": "canvas2d",
+          "expected": "canvas2d",
+          "status": "PASS"
+        },
+        {
+          "name": "Steady frames make no C allocations",
+          "observed": "webgl2 7→7, canvas2d 7→7",
+          "expected": "unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "No engine or page errors",
+          "observed": "none",
+          "expected": "none",
+          "status": "PASS"
+        },
+        {
+          "name": "Every cold load reached its first frame without errors or CSP violations",
+          "observed": "50 of 50",
+          "expected": "50 of 50",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "GPU timer query available": true,
+        "WebGL2 intervals longer than 1.5 × the median interval": "0 of 9001 (median 16.70 ms)",
+        "Frames rendered (WebGL2 / Canvas2D)": "9302 / 9301",
+        "Dropped update backlog (WebGL2 / Canvas2D)": "0 / 0",
+        "Cold loads measured": 50
+      },
+      "status": "PASS",
+      "raw": "raw/B01.json"
+    },
+    {
+      "id": "B06",
+      "title": "1,000 create/load/start/dispose cycles with cancellations (chromium 154.0.8037.58)",
+      "runtime": "chromium 154.0.8037.58 via Playwright (headless, channel chrome), GPU \"ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)\"; pages served by tools/serve.mjs with the production CSP and caching headers",
+      "measures": [
+        "Per repetition, 1,000 cycles in one page through the public API, in a fixed rotation: 6/10 full cycles (createEngine, loadImage of a 16 × 16 PNG, start, two frames, release, dispose), 1/10 with audio unlocked and a note played, 1/10 createEngine aborted with an AbortController (immediately, after a task or after 5 ms), 1/10 loadImage of a 1024 × 1024 PNG aborted the same ways, 1/10 dispose() while that PNG loads. Renderers alternate between auto (WebGL2) and Canvas2D.",
+        "Time per cycle by kind; the outcome of every cycle against its expected outcome.",
+        "Native: the accounted C bytes after releasing the image equal those before loading it. Host: canvases left in the document, JS event listeners and DOM nodes (Chromium DevTools counters after a forced GC). GPU: WebGL2 contexts created and the browser’s “too many active WebGL contexts” warnings. Audio: AudioContexts left open after dispose. Memory: JS heap after a forced GC at each checkpoint, its trend per cycle, and renderer RSS from the OS.",
+        "Attribution (Chromium): after the mixed cycles, a batch of full cycles and then a batch of audio cycles, each between forced-GC snapshots, give the JS listeners, DOM nodes and audio nodes still reachable per cycle of each kind."
+      ],
+      "excludes": [
+        "dispose() does not promise to return WebAssembly memory to the OS; the RSS trend is reported, not gated. performance.memory and DevTools counters are Chromium-only and approximate.",
+        "The engine does not call WEBGL_lose_context on dispose, so WebGL contexts of removed canvases live until garbage collection; the warning count shows how often the browser had to evict them."
+      ],
+      "rows": [
+        {
+          "scenario": "Full cycle: create, load PNG, start, 2 frames, release, dispose",
+          "metric": "ms per cycle",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 3000,
+            "p50": 29.700000002980232,
+            "p95": 34.3999999910593,
+            "p99": 36,
+            "mean": 29.916500000009933,
+            "max": 40.900000005960464,
+            "p95Min": 34.29999999701977,
+            "p95Max": 34.400000005960464
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Full cycle with audio unlock",
+          "metric": "ms per cycle",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 500,
+            "p50": 39,
+            "p95": 41.900000005960464,
+            "p99": 43.099999994039536,
+            "mean": 39.44600000083447,
+            "max": 68.19999998807907,
+            "p95Min": 41.400000005960464,
+            "p95Max": 42.6000000089407
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "createEngine() aborted",
+          "metric": "ms per cycle",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 500,
+            "p50": 0.7000000029802322,
+            "p95": 8.799999997019768,
+            "p99": 9.299999997019768,
+            "mean": 2.7649999995529653,
+            "max": 11.599999994039536,
+            "p95Min": 8.5,
+            "p95Max": 9
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "loadImage() aborted, then dispose",
+          "metric": "ms per cycle",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 500,
+            "p50": 8.799999997019768,
+            "p95": 34.70000000298023,
+            "p99": 36.29999999701977,
+            "mean": 15.83700000062585,
+            "max": 37.80000001192093,
+            "p95Min": 34.6000000089407,
+            "p95Max": 35.900000005960464
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "dispose() during loadImage()",
+          "metric": "ms per cycle",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 500,
+            "p50": 6.399999991059303,
+            "p95": 9.299999997019768,
+            "p99": 10.599999994039536,
+            "mean": 6.829000000953674,
+            "max": 11.299999997019768,
+            "p95Min": 8.900000005960464,
+            "p95Max": 10.300000011920929
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "JS heap trend after forced GC (worst repetition)",
+          "metric": "bytes per cycle",
+          "unit": "bytes",
+          "stats": {
+            "value": 178.30521212121212
+          },
+          "target": {
+            "op": "<=",
+            "limit": 1024,
+            "text": "≤ 1 KiB per cycle (no leak trend)",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Renderer RSS trend (worst repetition, OS view)",
+          "metric": "bytes per cycle",
+          "unit": "bytes",
+          "stats": {
+            "value": 140309.59709090908
+          },
+          "target": null,
+          "status": "INFO"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Every cycle ended as expected",
+          "observed": "5000 cycles",
+          "expected": "no unexpected outcome",
+          "status": "PASS"
+        },
+        {
+          "name": "Released images return the accounted C bytes (native ownership)",
+          "observed": "0 mismatches",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Every AudioContext is closed or collected after dispose",
+          "observed": "0 open",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "No canvas is left in the document",
+          "observed": "0 extra",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "No page errors or CSP violations",
+          "observed": "none",
+          "expected": "none",
+          "status": "PASS"
+        },
+        {
+          "name": "Disposed engines without audio stay unreachable (listeners, DOM nodes)",
+          "observed": "0.00 listeners, 0.00 DOM nodes, 0.00 audio nodes per cycle",
+          "expected": "≤ 0.05 per cycle",
+          "status": "PASS"
+        },
+        {
+          "name": "Disposed engines that unlocked audio stay unreachable (listeners, DOM nodes)",
+          "observed": "0.00 listeners, 0.00 DOM nodes, 2.00 audio nodes per cycle",
+          "expected": "≤ 0.05 per cycle",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Outcomes": {
+          "full: DISPOSED": 3000,
+          "abortCreate: ABORTED": 336,
+          "abortLoad: ABORTED": 338,
+          "disposeDuringLoad: STATE": 500,
+          "audio: DISPOSED": 500,
+          "abortCreate: created before abort": 164,
+          "abortLoad: loaded before abort": 162
+        },
+        "JS event listeners / DOM nodes after GC, end minus start (worst repetition)": "+0 / +0",
+        "Retention per cycle by kind (last repetition)": {
+          "full": {
+            "count": 50,
+            "unexpected": 0,
+            "listeners": 0,
+            "nodes": 0,
+            "audioHandlers": 0,
+            "heapBytes": 49.68
+          },
+          "audio": {
+            "count": 50,
+            "unexpected": 0,
+            "listeners": 0,
+            "nodes": 0,
+            "audioHandlers": 2,
+            "heapBytes": 554.56
+          }
+        },
+        "WebGL2 contexts created per repetition": "433, 432, 433, 433, 433",
+        "“Too many active WebGL contexts” warnings per repetition": "0, 8, 8, 0, 0",
+        "AudioContexts created / closed / collected (last repetition)": "121 / 121 / 0",
+        "JS heap after GC, start → end (last repetition)": "2174460 → 2338160 bytes",
+        "Renderer RSS, start → end (last repetition)": "411271168 → 385466368 bytes",
+        "JS heap trend per repetition (bytes/cycle)": "178.3, 173.5, 176.7, 173.9, 176.6"
+      },
+      "status": "PASS",
+      "raw": "raw/B06.json"
+    },
+    {
+      "id": "B07",
+      "title": "Four voices with event bursts and four-track music while the game renders (chromium 154.0.8037.58)",
+      "runtime": "chromium 154.0.8037.58 via Playwright (headless, channel chrome), GPU \"ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)\"; pages served by tools/serve.mjs with the production CSP and caching headers",
+      "measures": [
+        "The B01 scene rendering with WebGL2 while audio runs on the real AudioWorklet: a looping four-track piece (a note every step, vibrato/slide/fadeout) and, every 30 updates, a burst of four multi-note sounds (8 notes at 400 BPM) and twelve single notes, i.e. 16 play() calls, more than the four batch credits.",
+        "Engine CPU per frame with audio active, the update() cost including bursts, the burst alone, CAPACITY rejections, and the transport as seen from the main thread: acknowledgement latency per batch (post to ACK), batches in flight and batch sizes (JSON length as a proxy).",
+        "AudioContext state, sample rate and latencies as reported by the browser."
+      ],
+      "excludes": [
+        "Audio-thread render time, deadline misses and audible glitches: Chromium exposes no playout statistics here (AudioContext.playoutStats is absent), so glitches are not observable; the DSP cost per quantum is measured in the Node B07.",
+        "Headless Chromium mutes output (--mute-audio); the audio graph still runs."
+      ],
+      "rows": [
+        {
+          "scenario": "With audio: engine CPU (draw recording + submit + present)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0.10000000894069672,
+            "p95": 0.20000000298023224,
+            "p99": 0.29999999701976776,
+            "mean": 0.11855555570787854,
+            "max": 1.3999999910593033,
+            "p95Min": 0.20000000298023224,
+            "p95Max": 0.20000000298023224
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4,
+            "text": "p95 ≤ 4 ms (engine CPU, desktop)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "With audio: update() game logic",
+          "metric": "ms per call",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0,
+            "p95": 0,
+            "p99": 0.20000000298023224,
+            "mean": 0.007384786219943701,
+            "max": 0.4000000059604645,
+            "p95Min": 0,
+            "p95Max": 0.09999999403953552
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "With audio: draw() SDK recording",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0,
+            "p95": 0.10000000894069672,
+            "p99": 0.10000000894069672,
+            "mean": 0.023555555608537462,
+            "max": 0.20000000298023224,
+            "p95Min": 0.10000000894069672,
+            "p95Max": 0.10000000894069672
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "With audio: submit + present after draw()",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0.09999999403953552,
+            "p95": 0.20000000298023224,
+            "p99": 0.20000000298023224,
+            "mean": 0.09550000041723251,
+            "max": 1.3999999910593033,
+            "p95Min": 0.20000000298023224,
+            "p95Max": 0.20000000298023224
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "With audio: C submission (WebGL split)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0.09999999403953552,
+            "p95": 0.19999998807907104,
+            "p99": 0.20000000298023224,
+            "mean": 0.06427777797811561,
+            "max": 0.7999999970197678,
+            "p95Min": 0.19999998807907104,
+            "p95Max": 0.20000000298023224
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "With audio: WebGL upload + draw call (CPU)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 0,
+            "p95": 0.10000000894069672,
+            "p99": 0.10000000894069672,
+            "mean": 0.03042754012137767,
+            "max": 1.2999999970197678,
+            "p95Min": 0.10000000894069672,
+            "p95Max": 0.10000000894069672
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "With audio: GPU time (timer query)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9000,
+            "p50": 0.030916,
+            "p95": 0.045583,
+            "p99": 0.094,
+            "mean": 0.03283889833333339,
+            "max": 1.250416,
+            "p95Min": 0.032291,
+            "p95Max": 0.102999
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "With audio: frame interval (rAF)",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 16.69999999999709,
+            "p95": 16.70000000001164,
+            "p99": 16.80000000000291,
+            "mean": 16.666,
+            "max": 16.800000000017462,
+            "p95Min": 16.700000000004366,
+            "p95Max": 16.79999999998836
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Burst of 16 play() calls",
+          "metric": "ms per burst",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 300,
+            "p50": 0.20000000298023224,
+            "p95": 0.30000001192092896,
+            "p99": 0.30000001192092896,
+            "mean": 0.17666666780908902,
+            "max": 0.4000000059604645,
+            "p95Min": 0.29999999701976776,
+            "p95Max": 0.3999999910593033
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Batch ACK latency (post → ACK)",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 1546,
+            "p50": 0.4000000059604645,
+            "p95": 0.7000000029802322,
+            "p99": 0.7999999970197678,
+            "mean": 0.3986416559516998,
+            "max": 2.1000000089406967,
+            "p95Min": 0.7000000029802322,
+            "p95Max": 0.7000000029802322
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Batches in flight (max)",
+          "metric": "count",
+          "unit": "count",
+          "stats": {
+            "value": 4
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4,
+            "text": "≤ 4 credits",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "play() rejected with CAPACITY",
+          "metric": "count",
+          "unit": "count",
+          "stats": {
+            "value": 0
+          },
+          "target": {
+            "op": "==",
+            "limit": 0,
+            "text": "0 under this load",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Audio is running at the end",
+          "observed": "running",
+          "expected": "running",
+          "status": "PASS"
+        },
+        {
+          "name": "Music is still playing",
+          "observed": "true",
+          "expected": "true",
+          "status": "PASS"
+        },
+        {
+          "name": "Steady frames make no C allocations",
+          "observed": "7→7",
+          "expected": "unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "No engine or page errors",
+          "observed": "none",
+          "expected": "none",
+          "status": "PASS"
+        },
+        {
+          "name": "Every batch was acknowledged",
+          "observed": "0 unacknowledged at the end",
+          "expected": "≤ 4 (the last credits)",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Bursts / plays": "309 / 4944",
+        "Batches posted / max events per batch / max JSON bytes": "1546 / 12 / 5083",
+        "AudioContext": "running, 48000 Hz, baseLatency 0.005333333333333333, outputLatency 0.016, playoutStats not exposed",
+        "Intervals longer than 1.5 × the median": "0 of 9001"
+      },
+      "status": "PASS",
+      "raw": "raw/B07.json"
+    },
+    {
+      "id": "B09",
+      "title": "Startup: audio off vs lazy activation, cold/warm cache, root and nested path (chromium 154.0.8037.58)",
+      "runtime": "chromium 154.0.8037.58 via Playwright (headless, channel chrome), GPU \"ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)\"; pages served by tools/serve.mjs with the production CSP and caching headers",
+      "measures": [
+        "The game page (tools/bench/site/game.html, the B01 scene) deployed at / and at /games/demo/ with the packaged runtime beside it and relative imports. Each sample: a fresh browser context loads the page (cold: empty HTTP cache), then a second page in the same context loads it again (warm). With audio, Playwright clicks the page’s sound button (a real user gesture) after the first frame.",
+        "Time from navigation start to the first submitted frame, the unlock time from click to a running AudioContext, and the bytes the server sent per resource kind (body bytes from the server log, headers excluded), with the HTTP statuses.",
+        "The served runtime files needed before the first frame, compressed locally with brotli (quality 11) and gzip (level 9), against the 1 MiB compressed target.",
+        "The server answers like the production Nginx site: `Cache-Control: no-cache, no-transform` with ETag/Last-Modified and 304 revalidation, and the production CSP."
+      ],
+      "excludes": [
+        "Network latency and bandwidth (loopback), TLS and HTTP/2; tools/serve.mjs sends uncompressed bodies, so transfer sizes are uncompressed and the compressed sizes are computed, not transferred.",
+        "Audio startup happens after the first frame by design; the unlock time includes the audio.wasm download, the worklet module and the processor handshake, but not audible output (headless Chromium mutes output).",
+        "Cold here means an empty HTTP cache in a running browser; the browser and GPU processes are already warm."
+      ],
+      "rows": [
+        {
+          "scenario": "First frame: cold, root /, audio off",
+          "metric": "ms from navigation",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 45,
+            "p95": 50.400000005960464,
+            "p99": 50.400000005960464,
+            "mean": 46.68000000119209,
+            "max": 57.900000005960464,
+            "p95Min": 50.29999999701977,
+            "p95Max": 57.900000005960464
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "First frame: cold, root /, audio unlocked",
+          "metric": "ms from navigation",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 44.79999999701977,
+            "p95": 51.20000000298023,
+            "p99": 51.20000000298023,
+            "mean": 46.079999996721746,
+            "max": 58.70000000298023,
+            "p95Min": 48.6000000089407,
+            "p95Max": 58.70000000298023
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "First frame: warm, root /, audio off",
+          "metric": "ms from navigation",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 45.29999999701977,
+            "p95": 51.70000000298023,
+            "p99": 51.70000000298023,
+            "mean": 45.690000000596044,
+            "max": 53.900000005960464,
+            "p95Min": 46.79999999701977,
+            "p95Max": 53.900000005960464
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "First frame: warm, root /, audio unlocked",
+          "metric": "ms from navigation",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 45.400000005960464,
+            "p95": 55,
+            "p99": 55,
+            "mean": 46.579999996721746,
+            "max": 60.400000005960464,
+            "p95Min": 47.099999994039536,
+            "p95Max": 60.400000005960464
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "First frame: cold, nested /games/demo/, audio off",
+          "metric": "ms from navigation",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 46,
+            "p95": 50.5,
+            "p99": 50.5,
+            "mean": 46.33999999761581,
+            "max": 56.5,
+            "p95Min": 48.69999998807907,
+            "p95Max": 56.5
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "First frame: cold, nested /games/demo/, audio unlocked",
+          "metric": "ms from navigation",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 46.6000000089407,
+            "p95": 52.1000000089407,
+            "p99": 52.1000000089407,
+            "mean": 46.83000000119209,
+            "max": 59.5,
+            "p95Min": 50.29999999701977,
+            "p95Max": 59.5
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "First frame: warm, nested /games/demo/, audio off",
+          "metric": "ms from navigation",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 46.1000000089407,
+            "p95": 50.5,
+            "p99": 50.5,
+            "mean": 46.14000000059605,
+            "max": 56.599999994039536,
+            "p95Min": 49,
+            "p95Max": 56.599999994039536
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "First frame: warm, nested /games/demo/, audio unlocked",
+          "metric": "ms from navigation",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 45.79999999701977,
+            "p95": 53.29999999701977,
+            "p99": 53.29999999701977,
+            "mean": 45.8,
+            "max": 58.5,
+            "p95Min": 48.30000001192093,
+            "p95Max": 58.5
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Audio unlock (click → running): cold, root",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 17.900000005960464,
+            "p95": 20,
+            "p99": 20,
+            "mean": 18.149999998509884,
+            "max": 27.399999991059303,
+            "p95Min": 18.700000002980232,
+            "p95Max": 27.399999991059303
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Audio unlock (click → running): warm, root",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 50,
+            "p50": 17.5,
+            "p95": 18.799999997019768,
+            "p99": 18.799999997019768,
+            "mean": 17.700000001490118,
+            "max": 20,
+            "p95Min": 18.299999997019768,
+            "p95Max": 20
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Cold, audio off: bytes before the first frame (served, uncompressed)",
+          "metric": "bytes",
+          "unit": "bytes",
+          "stats": {
+            "value": 256882
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Warm, audio off: body bytes (304 revalidation)",
+          "metric": "bytes",
+          "unit": "bytes",
+          "stats": {
+            "value": 0
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Cold unlock: audio bytes (audio.wasm + processor.js)",
+          "metric": "bytes",
+          "unit": "bytes",
+          "stats": {
+            "value": 23166
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Runtime JS + WASM before the first frame, brotli 11 (computed)",
+          "metric": "bytes",
+          "unit": "bytes",
+          "stats": {
+            "value": 67499
+          },
+          "target": {
+            "op": "<=",
+            "limit": 1048576,
+            "text": "≤ 1 MiB compressed (visual runtime target)",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Every load reached its first frame without errors or CSP violations",
+          "observed": "400 of 400",
+          "expected": "400 of 400",
+          "status": "PASS"
+        },
+        {
+          "name": "Audio off: no AudioContext and no audio bytes",
+          "observed": "0 loads touched audio",
+          "expected": "0 loads",
+          "status": "PASS"
+        },
+        {
+          "name": "Lazy activation: audio runs after the click",
+          "observed": "running",
+          "expected": "running",
+          "status": "PASS"
+        },
+        {
+          "name": "Nested deployment requests stay under /games/demo/",
+          "observed": "none outside",
+          "expected": "none outside",
+          "status": "PASS"
+        },
+        {
+          "name": "Warm loads revalidate engine.wasm with 304",
+          "observed": "200 of 200",
+          "expected": "200 of 200",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Loads measured": 400,
+        "Runtime files before the first frame (root, cold)": "/pixeljs/index.js, /pixeljs/api/engine.js, /pixeljs/internal/protocol.js, /pixeljs/api/errors.js, /pixeljs/host/web/input.js, /pixeljs/host/web/renderer.js, /pixeljs/host/web/viewport.js, /pixeljs/internal/assets/bundle.js, /pixeljs/internal/assets/font-format.js, /pixeljs/internal/assets/json.js, /pixeljs/internal/assets/manifest.js, /pixeljs/internal/audio/controller.js, /pixeljs/internal/capture/service.js, /pixeljs/internal/commands.js, /pixeljs/internal/fetch.js, /pixeljs/internal/image-decoder.js, /pixeljs/internal/wasm/adapter.js, /pixeljs/host/web/gamepads.js, /pixeljs/host/web/pointers.js, /pixeljs/internal/audio/sequence.js, /pixeljs/host/web/styles.js, /pixeljs/internal/capture/gif.js, /pixeljs/internal/capture/png.js, /pixeljs/internal/capture/recorder.js, /pixeljs/internal/capture/slice.js, /pixeljs/internal/wasm/engine.wasm, /pixeljs/internal/wasm/engine.mjs",
+        "Runtime size raw / gzip / brotli": "251253 / 77993 / 67499 bytes",
+        "Audio files raw / gzip / brotli (after unlock)": "23166 / 11246 / 10083 bytes",
+        "Typical HTTP statuses, warm load": "{\"html 304\":1,\"js 304\":28,\"engine.wasm 304\":1}",
+        "createEngine() cold / warm (median of p50s)": "9.50 / 8.90 ms"
+      },
+      "status": "PASS",
+      "raw": "raw/B09.json"
+    },
+    {
+      "id": "B11",
+      "title": "Upload, decode and publication during play; cancellation and limits (chromium 154.0.8037.58)",
+      "runtime": "chromium 154.0.8037.58 via Playwright (headless, channel chrome), GPU \"ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)\"; pages served by tools/serve.mjs with the production CSP and caching headers",
+      "measures": [
+        "The B01 scene renders (WebGL2) while two loadImage() calls are always in flight, cycling 64 × 64, 256 × 256 and 1024 × 1024 PNGs (every fifth load is aborted at once or after 0–10 ms), and a synchronous 1024 × 1024 createImage() runs between frames every 500 ms; loaded images are drawn, and the oldest is released once eight are live. Baseline repetitions without loads come first.",
+        "Frame intervals and engine CPU with and without loads, time from loadImage() to a published image per size, cancellation latency (abort() to rejection), the synchronous upload cost, and peak memory: performance.memory per frame, DevTools JS heap and renderer RSS every 250 ms, and the accounted C bytes.",
+        "No partial state: cancelled loads alone leave the accounted C bytes unchanged. Limits: images are created until CAPACITY, which must arrive at the 256-slot resource limit while the engine keeps running."
+      ],
+      "excludes": [
+        "Queue limits inside the engine: there is no loader queue and no decode-concurrency limit yet; concurrency here is bounded by the caller, and peak memory scales with it.",
+        "PNG decoding runs in the browser (createImageBitmap) and palette mapping on the main thread; both are included in the load time, and a cancellation cannot interrupt a decode already running.",
+        "DevTools heap samples are not forced-GC values; RSS is the OS view of all renderer processes."
+      ],
+      "rows": [
+        {
+          "scenario": "Frame interval, no loads (baseline)",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 9001,
+            "p50": 16.69999999999709,
+            "p95": 16.70000000001164,
+            "p99": 16.80000000000291,
+            "mean": 16.665999999999997,
+            "max": 16.800000000017462,
+            "p95Min": 16.700000000004366,
+            "p95Max": 16.799999999995634
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Frame interval during loads and uploads",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 8988,
+            "p50": 16.699999999982538,
+            "p95": 16.70000000001164,
+            "p99": 16.800000000017462,
+            "mean": 16.69377431906615,
+            "max": 33.5,
+            "p95Min": 16.70000000001164,
+            "p95Max": 16.79999999998836
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Frame interval p95 ratio, loads / baseline",
+          "metric": "ratio",
+          "unit": "×",
+          "stats": {
+            "value": 1
+          },
+          "target": {
+            "op": "<=",
+            "limit": 1.25,
+            "text": "p95 ratio ≤ 1.25",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Engine CPU per frame during loads",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 8988,
+            "p50": 0,
+            "p95": 0.10000000894069672,
+            "p99": 0.20000000298023224,
+            "mean": 0.05211111099355751,
+            "max": 0.20000000298023224,
+            "p95Min": 0.10000000894069672,
+            "p95Max": 0.10000000894069672
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4,
+            "text": "p95 ≤ 4 ms (engine CPU, desktop)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "loadImage() 64 × 64 PNG (2304 bytes)",
+          "metric": "ms to published",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 5791,
+            "p50": 1.6000000089406967,
+            "p95": 6,
+            "p99": 22.200000002980232,
+            "mean": 2.5115051902057184,
+            "max": 43,
+            "p95Min": 4.0999999940395355,
+            "p95Max": 19.900000005960464
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "loadImage() 256 × 256 PNG (26229 bytes)",
+          "metric": "ms to published",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 5790,
+            "p50": 3.0999999940395355,
+            "p95": 23,
+            "p99": 23.899999991059303,
+            "mean": 8.913867355548135,
+            "max": 28.799999997019768,
+            "p95Min": 22.400000005960464,
+            "p95Max": 23.400000005960464
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "loadImage() 1024 × 1024 PNG (391920 bytes)",
+          "metric": "ms to published",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 5790,
+            "p50": 24.5,
+            "p95": 42.79999999701977,
+            "p99": 46.29999999701977,
+            "mean": 30.882256675277365,
+            "max": 56.70000000298023,
+            "p95Min": 42.20000000298023,
+            "p95Max": 43.29999999701977
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Cancellation: abort() to rejection",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 4340,
+            "p50": 0,
+            "p95": 0.19999998807907104,
+            "p99": 3.4000000059604645,
+            "mean": 0.11269585236494992,
+            "max": 6.700000002980232,
+            "p95Min": 0.19999998807907104,
+            "p95Max": 0.19999998807907104
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "createImage() 1024 × 1024 between frames (synchronous)",
+          "metric": "ms per call",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 290,
+            "p50": 4.700000002980232,
+            "p95": 4.899999991059303,
+            "p99": 5,
+            "mean": 4.74586206864694,
+            "max": 5,
+            "p95Min": 4.899999991059303,
+            "p95Max": 4.899999991059303
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Peak performance.memory during loads (Chromium, precise flag)",
+          "metric": "bytes",
+          "unit": "bytes",
+          "stats": {
+            "value": 60075279
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Peak accounted C bytes (coreBytes)",
+          "metric": "bytes",
+          "unit": "bytes",
+          "stats": {
+            "value": 4744860
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Peak JS heap sampled via DevTools every 250 ms",
+          "metric": "bytes",
+          "unit": "bytes",
+          "stats": {
+            "value": 4502928
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Peak renderer RSS (OS view)",
+          "metric": "bytes",
+          "unit": "bytes",
+          "stats": {
+            "value": 721698816
+          },
+          "target": null,
+          "status": "INFO"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Every load that was not cancelled was published",
+          "observed": "17371 published",
+          "expected": "all published",
+          "status": "PASS"
+        },
+        {
+          "name": "Cancellations reject with ABORTED (or had already completed)",
+          "observed": "{\"abort at once: ABORTED\":869,\"abort after 0 ms: ABORTED\":869,\"abort after 2 ms: ABORTED\":328,\"abort after 5 ms: completed first\":687,\"abort after 10 ms: completed first\":782,\"abort after 2 ms: completed first\":540,\"abort after 5 ms: ABORTED\":181,\"abort after 10 ms: ABORTED\":84}",
+          "expected": "ABORTED or completed first",
+          "status": "PASS"
+        },
+        {
+          "name": "Cancelled loads leave the accounted C bytes unchanged",
+          "observed": "345468 → 345468",
+          "expected": "unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "Creating images stops with CAPACITY at the 256-slot limit",
+          "observed": "CAPACITY after 253 + 3 live",
+          "expected": "CAPACITY at 256",
+          "status": "PASS"
+        },
+        {
+          "name": "The engine keeps running at the limit and recovers its bytes",
+          "observed": "RUNNING, restored true",
+          "expected": "RUNNING, restored",
+          "status": "PASS"
+        },
+        {
+          "name": "No engine or page errors",
+          "observed": "none",
+          "expected": "none",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Loads published / cancelled": "17371 / 4340",
+        "Cancellation outcomes": {
+          "abort at once: ABORTED": 869,
+          "abort after 0 ms: ABORTED": 869,
+          "abort after 2 ms: ABORTED": 328,
+          "abort after 5 ms: completed first": 687,
+          "abort after 10 ms: completed first": 782,
+          "abort after 2 ms: completed first": 540,
+          "abort after 5 ms: ABORTED": 181,
+          "abort after 10 ms: ABORTED": 84
+        },
+        "Intervals longer than 2 × the baseline median (baseline / loads)": "0 / 5",
+        "Quiet cancellation outcomes": "{\"ABORTED\":14,\"completed first\":36}"
+      },
+      "status": "PASS",
+      "raw": "raw/B11.json"
+    },
+    {
+      "id": "B12",
+      "title": "Audio transport on the real AudioWorklet: saturation, STOP, suspend, missing ACK and failure (chromium 154.0.8037.58)",
+      "runtime": "chromium 154.0.8037.58 via Playwright (headless, channel chrome), GPU \"ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)\"; pages served by tools/serve.mjs with the production CSP and caching headers",
+      "measures": [
+        "Real processor: 5000 play() calls in one task (no ACK can arrive meanwhile), then the time until every posted batch is acknowledged; STOP with a full queue, and the round trip until a note posted in the new epoch is acknowledged; pause()/resume() and the device state changes; 20 iterations.",
+        "Stalled processor (benchmark fixture that completes the handshake and then never reads its port): credits after 2,000 plays, and port traffic after 200 stop()/play() cycles.",
+        "Failing processor (benchmark fixture that reports an error 32 quanta after starting): time from unlock to the reported failure, while the game keeps rendering."
+      ],
+      "excludes": [
+        "Audible output and device underruns (headless Chromium mutes output; no playout statistics are exposed). Times come from main-thread timestamps of posts and received messages.",
+        "Batch sizes use JSON length as a proxy for the structured clone; the Node B12 reports V8 serialization sizes."
+      ],
+      "rows": [
+        {
+          "scenario": "Burst: play() calls admitted",
+          "metric": "count",
+          "unit": "count",
+          "stats": {
+            "value": 1028
+          },
+          "target": {
+            "op": "==",
+            "limit": 1028,
+            "text": "= 1028 (1,024 queued + 4 in flight)",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Burst: time to drain the queue (last ACK)",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 20,
+            "p50": 0.8999999910593033,
+            "p95": 1.6000000089406967,
+            "p99": 1.7000000029802322,
+            "mean": 0.9600000016391277,
+            "max": 1.7000000029802322,
+            "p95Min": 1.6000000089406967,
+            "p95Max": 1.6000000089406967
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Batch ACK latency (post → ACK)",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 400,
+            "p50": 0.19999998807907104,
+            "p95": 21.5,
+            "p99": 22.30000001192093,
+            "mean": 3.7475000001490115,
+            "max": 22.600000008940697,
+            "p95Min": 21.5,
+            "p95Max": 21.5
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Batches in flight (max)",
+          "metric": "count",
+          "unit": "count",
+          "stats": {
+            "value": 4
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4,
+            "text": "≤ 4 credits",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "stop() with a full queue",
+          "metric": "ms per call",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 20,
+            "p50": 0,
+            "p95": 0.09999999403953552,
+            "p99": 0.09999999403953552,
+            "mean": 0.014999999105930329,
+            "max": 0.09999999403953552,
+            "p95Min": 0.09999999403953552,
+            "p95Max": 0.09999999403953552
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "STOP round trip (stop() → ACK of the next note)",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 20,
+            "p50": 0.09999999403953552,
+            "p95": 0.20000000298023224,
+            "p99": 0.20000000298023224,
+            "mean": 0.075,
+            "max": 0.20000000298023224,
+            "p95Min": 0.20000000298023224,
+            "p95Max": 0.20000000298023224
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "pause() → AudioContext suspended",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 20,
+            "p50": 0.29999999701976776,
+            "p95": 0.4000000059604645,
+            "p99": 0.4000000059604645,
+            "mean": 0.26999999955296516,
+            "max": 0.4000000059604645,
+            "p95Min": 0.4000000059604645,
+            "p95Max": 0.4000000059604645
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "resume() → AudioContext running",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 20,
+            "p50": 2.2000000029802322,
+            "p95": 3.4000000059604645,
+            "p99": 4.4000000059604645,
+            "mean": 2.424999999254942,
+            "max": 4.4000000059604645,
+            "p95Min": 3.4000000059604645,
+            "p95Max": 3.4000000059604645
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Failing processor: unlock → failure reported",
+          "metric": "ms",
+          "unit": "ms",
+          "stats": {
+            "value": 121.8999999910593
+          },
+          "target": null,
+          "status": "INFO"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Every burst admits exactly 1,024 + 4 notes",
+          "observed": "1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028, 1028",
+          "expected": "1028",
+          "status": "PASS"
+        },
+        {
+          "name": "Every posted batch is acknowledged after a burst",
+          "observed": "20 of 20",
+          "expected": "20 of 20",
+          "status": "PASS"
+        },
+        {
+          "name": "No note is sent while paused",
+          "observed": "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Stalled processor: plays leave ≤ 4 batches posted",
+          "observed": "4 posts, 1028 admitted",
+          "expected": "≤ 4",
+          "status": "PASS"
+        },
+        {
+          "name": "Stalled processor: port traffic stays bounded across stop()/play() cycles",
+          "observed": "5 posts (660 JSON bytes) after 200 cycles",
+          "expected": "≤ 5",
+          "status": "PASS"
+        },
+        {
+          "name": "Failing processor: reported once, audio failed, context closed",
+          "observed": "AUDIO_ERROR; failed; context closed",
+          "expected": "AUDIO_ERROR once; failed; closed",
+          "status": "PASS"
+        },
+        {
+          "name": "Failing processor: the game keeps running",
+          "observed": "RUNNING, 12 frames in 200 ms after the failure",
+          "expected": "RUNNING, frames advancing",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Unlock (real processor)": "9.7 ms, state running",
+        "Rejected per burst (CAPACITY)": "3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972, 3972",
+        "Stalled processor posts after burst / after cycles": "4 / 5"
+      },
+      "status": "PASS",
+      "raw": "raw/B12.json"
+    },
+    {
+      "id": "B08",
+      "title": "At least 15 minutes on a named physical mobile device",
+      "status": "NOT RUN",
+      "note": "not executed: needs a named physical device",
+      "measures": [],
+      "excludes": [
+        "No physical Android or iPhone is attached to this machine. Desktop browsers, Playwright WebKit and simulators do not substitute for it."
+      ],
+      "raw": null
+    },
+    {
+      "id": "B10",
+      "title": "E0 versus optional E1/E2 worker execution",
+      "status": "N/A",
+      "note": "not applicable (no worker runtime)",
+      "measures": [],
+      "excludes": [
+        "PixelJS 0.0.1 has no E1/E2 worker runtime (engine.capabilities.workers is false), so there is nothing to compare against E0."
+      ],
+      "observations": {
+        "engine.capabilities.workers observed in the browser": "false"
+      },
+      "raw": null
+    }
+  ]
+}

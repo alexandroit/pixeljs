@@ -1,0 +1,14 @@
+{
+  "format": "pixeljs-sound",
+  "version": 1,
+  "waveform": "square",
+  "frequency": 330,
+  "effect": "slide",
+  "slideTo": 165,
+  "volume": 0.3,
+  "attack": 0.01,
+  "decay": 0.05,
+  "sustain": 0.6,
+  "release": 0.08,
+  "duration": 0.3
+}

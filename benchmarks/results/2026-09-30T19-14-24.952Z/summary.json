@@ -1,0 +1,1165 @@
+{
+  "environment": {
+    "tool": "tools/bench.mjs",
+    "recordedAt": "2026-09-30T19:14:24.952Z",
+    "git": {
+      "commit": "36bf7b468e4c827f4c59ea06e0f85721f7d49394",
+      "branch": "main",
+      "dirty": false
+    },
+    "build": {
+      "package": "@pixeljs/core",
+      "version": "0.0.1",
+      "manifest": "artifacts/build-manifest.json",
+      "matchesManifest": true,
+      "mismatches": [],
+      "files": {
+        "dist/index.js": "e1e97f432d0ef150708bfaf5f418d1d275c34e916d848814c7ead807107fd6fb",
+        "dist/api/engine.js": "53c9613141c7142912af7b52b90fad564ccc68a6869f28216486cb683414b22c",
+        "dist/internal/commands.js": "12f593ba62fc5d837a035df577cfd78c388aac031226c24c20375e12c714468d",
+        "dist/internal/wasm/adapter.js": "a759603306a60c7c81369653a201ffc2de93e99b771e8bb416052b22e8cdc075",
+        "dist/internal/wasm/engine.mjs": "89208dccb0aeffb525818c7e10e59b191d5821e7f1c3c9c5950a45087c820ecc",
+        "dist/internal/wasm/engine.wasm": "85add7fd0795ff4aaea92c9320a24707fa6d281bad9c76c929cd968da3c0d7f2",
+        "dist/internal/wasm/audio.wasm": "893cd370e6f8d780487ace24e92906e3f80e8337c51a932ba060d344377b0a78",
+        "dist/internal/audio/controller.js": "6656a17a5e9ac4d1aec0834b5d7246f51a315051c522e7cad93c449cd97a795b",
+        "dist/internal/audio/processor.js": "07238174a7fd0ba2de3a4748ec06f30922b90da265c429a476ea3d8d6cafc24e"
+      }
+    },
+    "buildFlags": "CMAKE_BUILD_TYPE=Release (tools/build-wasm.mjs); production validation enabled",
+    "pinnedToolchain": {
+      "emscripten": "6.0.10",
+      "node": "24.20.0",
+      "playwright": "1.63.0"
+    },
+    "node": "v24.20.0",
+    "os": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "arch": "arm64",
+      "version": "27.0.1",
+      "model": "Mac16,10"
+    },
+    "cpu": {
+      "model": "Apple M4",
+      "logical": 10
+    },
+    "memory": {
+      "totalBytes": 17179869184,
+      "freeBytesAtStart": 3594911744
+    },
+    "power": "Now drawing from 'AC Power'",
+    "loadAverage": {
+      "start": [
+        3.97,
+        5.26,
+        6.44
+      ],
+      "end": [
+        2.86,
+        3.01,
+        3.39
+      ]
+    },
+    "busy": true,
+    "finishedAt": "2026-09-30T20:16:26.775Z",
+    "busyThreshold": 2.5
+  },
+  "benchmarks": [
+    {
+      "id": "B01",
+      "title": "256 × 144 character/HUD scene (core part)",
+      "runtime": "Node v24.20.0, real engine.wasm/audio.wasm from packages/core/dist",
+      "measures": [
+        "C validation plus rasterization per frame (`_pxw_submit`) for the original character/HUD scene of tools/bench/site/scene.mjs (≈95 commands: sky, stars, ground tiles, coins, an animated 16 × 16 hero, HUD text and bars), 240 distinct prebuilt frames in rotation; each frame also copies its records into the mailbox.",
+        "The same frames with one invalid final record: the validation pass alone, since a rejected batch draws nothing.",
+        "The earlier baseline (clear + 32 clipped 16 × 16 rectangles) for continuity with previous results."
+      ],
+      "excludes": [
+        "JavaScript game logic, SDK argument validation and encoding, palette expansion, texture upload, GPU work and cold start: see B01 in `npm run bench:browser` for the full browser pipeline.",
+        "A sample is the mean over a batch of 20 (scene) or 100 (baseline) frames, which smooths single-frame outliers."
+      ],
+      "rows": [
+        {
+          "scenario": "HUD scene, validation + raster",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 1229817,
+            "p50": 0.006014549999963492,
+            "p95": 0.006304150001960806,
+            "p99": 0.00738124999916181,
+            "mean": 0.006096043192923146,
+            "max": 0.312481249999837,
+            "p95Min": 0.006293749999895226,
+            "p95Max": 0.006333299999823794
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4,
+            "text": "p95 ≤ 4 ms (engine CPU, desktop)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "HUD scene, validation only (rejected twin)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 1250000,
+            "p50": 0.0009270499998820014,
+            "p95": 0.0009562499995809049,
+            "p99": 0.0011499999993247912,
+            "mean": 0.0009373635229997138,
+            "max": 0.09070835000020452,
+            "p95Min": 0.0009479000000283122,
+            "p95Max": 0.0009728999983053654
+          },
+          "target": null,
+          "status": "INFO"
+        },
+        {
+          "scenario": "Baseline clear + 32 rects",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 492301,
+            "p50": 0.0030337500001769513,
+            "p95": 0.003146669999987353,
+            "p99": 0.003513749999983702,
+            "mean": 0.0030437626701709905,
+            "max": 0.06366042000008747,
+            "p95Min": 0.0031358399999589894,
+            "p95Max": 0.003214999999618158
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4,
+            "text": "p95 ≤ 4 ms (engine CPU, desktop)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Steady frames make no C allocations",
+          "observed": "before 4/7, after 4/7",
+          "expected": "unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "Every measured frame had the expected status",
+          "observed": "0 unexpected",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Rejected twins fail with RANGE at their last record",
+          "observed": "yes",
+          "expected": "yes",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Commands per scene frame": "92–93",
+        "Validation share of the scene frame (median)": "15%"
+      },
+      "status": "PASS",
+      "raw": "raw/B01.json"
+    },
+    {
+      "id": "B02",
+      "title": "1,000 8 × 8 and 16 × 16 sprites with clipping and transparency",
+      "runtime": "Node v24.20.0, real engine.wasm/audio.wasm from packages/core/dist",
+      "measures": [
+        "C validation plus rasterization of CLEAR and 1,000 BLIT records per frame: 500 16 × 16 and 500 8 × 8 sprites from one sheet with transparent index 0, all four flip combinations, positions spread from −16 to 272 × −16 to 160 so many are clipped."
+      ],
+      "excludes": [
+        "SDK encoding, texture upload, GPU work and game logic.",
+        "This workload was revised on 2026-09-30 to match its description (earlier results used 1,000 opaque 8 × 8 sources); older B02 numbers are not comparable."
+      ],
+      "rows": [
+        {
+          "scenario": "1,000 sprites",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 59747,
+            "p50": 0.12460624999948777,
+            "p95": 0.12806459999992512,
+            "p99": 0.13536460000032094,
+            "mean": 0.1255045966491042,
+            "max": 1.262447899999097,
+            "p95Min": 0.12723955000401474,
+            "p95Max": 0.12926664999686183
+          },
+          "target": {
+            "op": "<=",
+            "limit": 8,
+            "text": "p95 ≤ 8 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Steady frames make no C allocations",
+          "observed": "before 5, after 5",
+          "expected": "unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "Every measured frame was accepted",
+          "observed": "0 rejected",
+          "expected": "0",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Transparent share of the sprite sheet": "32.0%",
+        "Sprites clipped at an edge": 171,
+        "Sprites entirely offscreen": 184
+      },
+      "status": "PASS",
+      "raw": "raw/B02.json"
+    },
+    {
+      "id": "B03",
+      "title": "Scrolling viewport over a larger tilemap (visible-work culling)",
+      "runtime": "Node v24.20.0, real engine.wasm/audio.wasm from packages/core/dist",
+      "measures": [
+        "C validation plus rasterization per frame while a 256 × 144 view scrolls along a fixed path over maps of 8 × 8 tiles (256-tile tileset with transparency, about 6% empty cells). Each frame is CLEAR plus TILEMAP records that name the whole map: the core itself selects the cells that intersect the clip.",
+        "Map A: 256 × 256 cells (65,536). World B: 16× larger, 1024 × 1024 cells as 4 × 4 chunk maps of 256 × 256 (16 TILEMAP records per frame, the view crossing chunk seams). Map C: one 1024 × 512 map (8×, 524,288 cells), the largest single tilemap the 1,048,608-byte upload limit allows.",
+        "The median-cost ratios B/A and C/A: if culling works, cost follows the visible cells, not the map size."
+      ],
+      "excludes": [
+        "SDK encoding, texture upload, GPU work and game logic.",
+        "A single 1024 × 1024-cell map cannot be uploaded (limit 524,288 cells per tilemap), so the 16× case uses chunks; per-record overhead of the 15 extra records is included in its cost."
+      ],
+      "rows": [
+        {
+          "scenario": "A: 256 × 256 map",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 370135,
+            "p50": 0.020250000001396984,
+            "p95": 0.0209478999953717,
+            "p99": 0.0223187500028871,
+            "mean": 0.020293283186509387,
+            "max": 0.47312709999969227,
+            "p95Min": 0.020822899998165667,
+            "p95Max": 0.02112084999680519
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4,
+            "text": "p95 ≤ 4 ms (engine CPU, desktop)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "B: 16× world (4 × 4 chunks)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 346002,
+            "p50": 0.021500000002561137,
+            "p95": 0.022356250003213063,
+            "p99": 0.02439790000207722,
+            "mean": 0.021606737917041843,
+            "max": 0.3919020500034094,
+            "p95Min": 0.022110399999655785,
+            "p95Max": 0.023054150003008544
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4,
+            "text": "p95 ≤ 4 ms (engine CPU, desktop)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "C: 8× single map (1024 × 512)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 370080,
+            "p50": 0.020187500002793967,
+            "p95": 0.020768749999115245,
+            "p99": 0.02157704999553971,
+            "mean": 0.020153504731849306,
+            "max": 0.2702667000005022,
+            "p95Min": 0.020693749998463316,
+            "p95Max": 0.02198335000430234
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4,
+            "text": "p95 ≤ 4 ms (engine CPU, desktop)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "B/A cost ratio",
+          "metric": "median ratio",
+          "unit": "×",
+          "stats": {
+            "value": 1.061728395114959
+          },
+          "target": {
+            "op": "<=",
+            "limit": 1.25,
+            "text": "median ratio ≤ 1.25 (cost tracks the visible area)",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "C/A cost ratio",
+          "metric": "median ratio",
+          "unit": "×",
+          "stats": {
+            "value": 0.9969135803161133
+          },
+          "target": {
+            "op": "<=",
+            "limit": 1.25,
+            "text": "median ratio ≤ 1.25 (cost tracks the visible area)",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Steady frames make no C allocations",
+          "observed": "before 23, after 23",
+          "expected": "unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "Every measured frame was accepted",
+          "observed": "0 rejected",
+          "expected": "0",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Cells per map": "A 65,536; B 1,048,576 (16 × 65,536); C 524,288",
+        "Visible cells per frame (mean over the path, all variants)": "620.5"
+      },
+      "status": "PASS",
+      "raw": "raw/B03.json"
+    },
+    {
+      "id": "B04",
+      "title": "Primitives partially and extremely offscreen",
+      "runtime": "Node v24.20.0, real engine.wasm/audio.wasm from packages/core/dist",
+      "measures": [
+        "Classic (1001 records, unchanged from earlier results): 250 each of LINE, RECTB, CIRCLE and CIRCLE_FILL spread from −20 to 280 × −20 to 160.",
+        "New primitives (869 records): 100 each of ELLIPSE, ELLIPSE_FILL, TRIANGLE, TRIANGLE_FILL and rotated/scaled sprites (BLIT_TRANSFORM, 0.5×–3×) with a palette remap, 16 clipped flood fills inside outlines and 2 unclipped flood fills.",
+        "Extreme (81 records): lines between ±2,000,000,000 endpoints crossing the view, huge outlines, circles of radius 200,000 and 50,000 whose arcs cross the view, 16,384-pixel ellipses, triangles with int32-scale vertices covering the view, a 64× rotated sprite and a camera near the int32 edge.",
+        "Entirely offscreen (1001 records): every primitive kind placed beyond ±2,000,000,000, which the core must cull without drawing."
+      ],
+      "excludes": [
+        "SDK encoding, texture upload, GPU work and game logic.",
+        "Circles are charged by radius (their midpoint loop runs regardless of clipping), so the extreme batch is dominated by its two large circles by design."
+      ],
+      "rows": [
+        {
+          "scenario": "Classic lines/rects/circles",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 85849,
+            "p50": 0.08722294999752193,
+            "p95": 0.08831250000512228,
+            "p99": 0.08990415000589565,
+            "mean": 0.08730740421103503,
+            "max": 0.2965625000069849,
+            "p95Min": 0.08766459999606013,
+            "p95Max": 0.08872085000621155
+          },
+          "target": {
+            "op": "<=",
+            "limit": 8,
+            "text": "p95 ≤ 8 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Ellipses, triangles, fills, rotated sprites",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 19214,
+            "p50": 0.38865625000325965,
+            "p95": 0.39942085000220684,
+            "p99": 0.406654150004033,
+            "mean": 0.39011668491553686,
+            "max": 0.4935000000055879,
+            "p95Min": 0.3970333499950357,
+            "p95Max": 0.4069333499995992
+          },
+          "target": {
+            "op": "<=",
+            "limit": 8,
+            "text": "p95 ≤ 8 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Extreme coordinates crossing the view",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 12505,
+            "p50": 0.5988437500083819,
+            "p95": 0.6063083500019275,
+            "p99": 0.6205520499963313,
+            "mean": 0.5989404547306427,
+            "max": 1.0702249999972993,
+            "p95Min": 0.6045145999989472,
+            "p95Max": 0.6119999999995344
+          },
+          "target": {
+            "op": "<=",
+            "limit": 8,
+            "text": "p95 ≤ 8 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Entirely offscreen at int32 extremes",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 510555,
+            "p50": 0.014635449997149408,
+            "p95": 0.01489170000422746,
+            "p99": 0.015418750001117587,
+            "mean": 0.014679077329418781,
+            "max": 0.1625916499993764,
+            "p95Min": 0.014852099993731827,
+            "p95Max": 0.015054150007199497
+          },
+          "target": {
+            "op": "<=",
+            "limit": 8,
+            "text": "p95 ≤ 8 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Steady frames make no C allocations",
+          "observed": "before 5, after 5",
+          "expected": "unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "Every measured frame was accepted",
+          "observed": "0 rejected",
+          "expected": "0",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "raw": "raw/B04.json"
+    },
+    {
+      "id": "B05",
+      "title": "4,096 commands and raster work near the cap, with predictable rejection",
+      "runtime": "Node v24.20.0, real engine.wasm/audio.wasm from packages/core/dist",
+      "measures": [
+        "A full 4,096-record batch (CLEAR and 4,095 4 × 4 rectangles), the command-count limit.",
+        "The 16,000,000-unit work budget spent by one primitive family at a time: CLEAR plus the largest count (or, for the circle, radius) the core admits, found by bisection, so each batch is within one command of the cap. The families differ in cost per work unit; the slowest one is the worst batch validation admits.",
+        "One rectangle over the cap (434 full-screen rectangles): rejection with CAPACITY before anything is drawn, and its cost; and a 4,096-record batch whose last record is invalid."
+      ],
+      "excludes": [
+        "SDK encoding, texture upload and GPU work. Samples at the cap are single frames (batch 1); the others average 5 or 20 frames.",
+        "The budget bounds work units, not time (docs/architecture.md): these rows are the per-operation calibration data the plan asks for."
+      ],
+      "rows": [
+        {
+          "scenario": "4,096 records",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 248790,
+            "p50": 0.12026680000126362,
+            "p95": 0.12302500000223518,
+            "p99": 0.12750819995999335,
+            "mean": 0.1201162169652893,
+            "max": 1.3704834000207484,
+            "p95Min": 0.1214499999769032,
+            "p95Max": 0.1312416000291705
+          },
+          "target": {
+            "op": "<=",
+            "limit": 16,
+            "text": "p95 ≤ 16 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "At the cap: full-screen rectangles (433 × records)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 553984,
+            "p50": 0.2671670001000166,
+            "p95": 0.2717499998398125,
+            "p99": 0.28137500025331974,
+            "mean": 0.2685937854479177,
+            "max": 5.2012500003911555,
+            "p95Min": 0.27012500003911555,
+            "p95Max": 0.2832089997828007
+          },
+          "target": {
+            "op": "<=",
+            "limit": 16.67,
+            "text": "p95 ≤ 16.67 ms (calibration target: an admitted batch fits a 60 Hz frame)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "At the cap: full-screen 256 × 144 sprites with transparency (433 × records)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 10778,
+            "p50": 13.79833299992606,
+            "p95": 13.89345799991861,
+            "p99": 14.640791999874637,
+            "mean": 13.812937821822544,
+            "max": 35.19912500004284,
+            "p95Min": 13.848416999913752,
+            "p95Max": 15.244542000349611
+          },
+          "target": {
+            "op": "<=",
+            "limit": 16.67,
+            "text": "p95 ≤ 16.67 ms (calibration target: an admitted batch fits a 60 Hz frame)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "At the cap: 16 × 16 sprites rotated and scaled 20× over the view (144 × record pairs)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 13142,
+            "p50": 11.381708999862894,
+            "p95": 11.493458000011742,
+            "p99": 11.722666999790817,
+            "mean": 11.369400286479554,
+            "max": 33.11908300011419,
+            "p95Min": 11.407207999844104,
+            "p95Max": 11.817249999847263
+          },
+          "target": {
+            "op": "<=",
+            "limit": 16.67,
+            "text": "p95 ≤ 16.67 ms (calibration target: an admitted batch fits a 60 Hz frame)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "At the cap: unclipped flood fills repainting the view (43 × records)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 85629,
+            "p50": 1.7417500000447035,
+            "p95": 1.757582999765873,
+            "p99": 1.794749999884516,
+            "mean": 1.7446236469549516,
+            "max": 6.554874999914318,
+            "p95Min": 1.7509170002304018,
+            "p95Max": 1.8211670001037419
+          },
+          "target": {
+            "op": "<=",
+            "limit": 16.67,
+            "text": "p95 ≤ 16.67 ms (calibration target: an admitted batch fits a 60 Hz frame)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "At the cap: one circle whose radius spends the budget (its arc crosses the view) (radius 1,995,391)",
+          "metric": "ms per frame",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 36028,
+            "p50": 4.104542000219226,
+            "p95": 4.2186250002123415,
+            "p99": 4.299375000409782,
+            "mean": 4.130871730968348,
+            "max": 21.65375000005588,
+            "p95Min": 4.215041999705136,
+            "p95Max": 4.632708000019193
+          },
+          "target": {
+            "op": "<=",
+            "limit": 16.67,
+            "text": "p95 ≤ 16.67 ms (calibration target: an admitted batch fits a 60 Hz frame)",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Over the cap (rejected)",
+          "metric": "ms per rejection",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 1250000,
+            "p50": 0.003591699991375208,
+            "p95": 0.0037125000031664967,
+            "p99": 0.00381249999627471,
+            "mean": 0.0036022733174182744,
+            "max": 0.49265420001465826,
+            "p95Min": 0.003683300013653934,
+            "p95Max": 0.003954200004227459
+          },
+          "target": {
+            "op": "<=",
+            "limit": 1,
+            "text": "p95 ≤ 1 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "4,096 records, last invalid (rejected)",
+          "metric": "ms per rejection",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 211178,
+            "p50": 0.03494165000738576,
+            "p95": 0.03577709998935461,
+            "p99": 0.037239599996246396,
+            "mean": 0.035063182787953735,
+            "max": 0.6672604500083252,
+            "p95Min": 0.03544375000055879,
+            "p95Max": 0.04235415000002831
+          },
+          "target": {
+            "op": "<=",
+            "limit": 1,
+            "text": "p95 ≤ 1 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Over-cap batch is rejected with CAPACITY",
+          "observed": "status 3 at command 434",
+          "expected": "status 3",
+          "status": "PASS"
+        },
+        {
+          "name": "Rejected batches leave frame and palette unchanged",
+          "observed": "unchanged",
+          "expected": "unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "Steady frames make no C allocations",
+          "observed": "before 6, after 6",
+          "expected": "unchanged",
+          "status": "PASS"
+        },
+        {
+          "name": "Every measured frame had the expected status",
+          "observed": "0 unexpected",
+          "expected": "0",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Slowest admitted family (median p95)": "full-screen 256 × 144 sprites with transparency: 13.893 ms",
+        "Approximate ms per million work units (median p50 / 16)": {
+          "rects": 0.0167,
+          "sprites": 0.8624,
+          "rotated": 0.7114,
+          "fills": 0.1089,
+          "circle": 0.2565
+        },
+        "Command index reported for the over-cap rejection": 434
+      },
+      "status": "PASS",
+      "raw": "raw/B05.json"
+    },
+    {
+      "id": "B07",
+      "title": "Four voices, event bursts and four-track music (DSP)",
+      "runtime": "Node v24.20.0, real engine.wasm/audio.wasm from packages/core/dist",
+      "measures": [
+        "A: the earlier workload for continuity, four sustained voices (one per waveform) rendered in 512-frame blocks at 48 kHz.",
+        "B: a looping 64-step piece on four tracks (a note on every step, vibrato, slide and fadeout effects) while every 16th 128-frame quantum applies a burst of four multi-note sounds (8 notes each at 400 BPM) that take over the voices; the time per 128-frame quantum including any burst applied before it.",
+        "Burst application alone (pxa_sound_begin/note/play for four voices), and the number of quanta slower than real time (2.667 ms), which would underrun on an audio thread."
+      ],
+      "excludes": [
+        "The AudioWorklet thread, message transport and the browser audio device (see B12 and B07 in `npm run bench:browser`); audible quality.",
+        "Rendering of the game: in a browser the DSP runs on the audio thread, so the game frame is measured separately (B07 browser)."
+      ],
+      "rows": [
+        {
+          "scenario": "A: 4 sustained voices",
+          "metric": "ms per 512 frames",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 151711,
+            "p50": 0.009717500000260771,
+            "p95": 0.01040625000372529,
+            "p99": 0.011315000001341105,
+            "mean": 0.009887092676579362,
+            "max": 0.5374983299989253,
+            "p95Min": 0.010391250001266599,
+            "p95Max": 0.010695830001495779
+          },
+          "target": {
+            "op": "<=",
+            "limit": 0.2,
+            "text": "p95 ≤ 0.2 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "B: music + bursts",
+          "metric": "ms per 128-frame quantum",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 1250000,
+            "p50": 0.003292000386863947,
+            "p95": 0.004292000085115433,
+            "p99": 0.005000000353902578,
+            "mean": 0.003504026464594528,
+            "max": 1.4844169998541474,
+            "p95Min": 0.004249999765306711,
+            "p95Max": 0.004416999872773886
+          },
+          "target": {
+            "op": "<=",
+            "limit": 0.26666666666666666,
+            "statistic": "p99",
+            "text": "p99 ≤ 0.267 ms (10% of the quantum)"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "B: one burst of four multi-note sounds",
+          "metric": "ms per burst",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 1250000,
+            "p50": 0.00033299997448921204,
+            "p95": 0.0003750002942979336,
+            "p99": 0.00045900000259280205,
+            "mean": 0.000335403615642339,
+            "max": 0.6942079998552799,
+            "p95Min": 0.00037499982863664627,
+            "p95Max": 0.0003750002942979336
+          },
+          "target": {
+            "op": "<=",
+            "limit": 0.26666666666666666,
+            "text": "p95 ≤ 0.267 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "B: quanta slower than real time",
+          "metric": "count",
+          "unit": "count",
+          "stats": {
+            "value": 0
+          },
+          "target": {
+            "op": "==",
+            "limit": 0,
+            "text": "0 deadline misses",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        }
+      ],
+      "checks": [
+        {
+          "name": "A renders four sounding voices",
+          "observed": "sounding",
+          "expected": "sounding",
+          "status": "PASS"
+        },
+        {
+          "name": "B output is finite and within [−1, 1]",
+          "observed": "peak 1.000, 0 non-finite",
+          "expected": "finite, peak ≤ 1",
+          "status": "PASS"
+        },
+        {
+          "name": "B is never silent for 20 quanta",
+          "observed": "0 silent windows",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "B music advances through its steps",
+          "observed": "12 distinct steps seen",
+          "expected": "> 8",
+          "status": "PASS"
+        },
+        {
+          "name": "B bursts start on all four voices",
+          "observed": "11171688 sounds started",
+          "expected": "a multiple of 4, > 0",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Real-time margin of A (block duration / median p95)": "1025×",
+        "Real-time margin of B (quantum / median p99)": "533×",
+        "Quanta measured in B (one timed quantum per sample, so timer overhead of ~0.1 µs is included)": 1250000
+      },
+      "status": "PASS",
+      "raw": "raw/B07.json"
+    },
+    {
+      "id": "B12",
+      "title": "Audio transport: missing ACK/consumption, saturation, STOP, suspend and failure",
+      "runtime": "Node v24.20.0, real engine.wasm/audio.wasm from packages/core/dist; real AudioController and processor.js with a scripted MessagePort and AudioContext",
+      "measures": [
+        "The real AudioController (packages/core/dist) and the real AudioWorklet processor module running the real audio.wasm, joined by a scripted, ordered port that the benchmark pumps. Startup goes through unlock(), the DSP download and the init/ready handshake.",
+        "Queue, credit and port bounds when ACKs are lost, when the processor consumes nothing (including repeated stop()/play() cycles), and when the producer outruns a processor that acknowledges once per 128-frame quantum; batch sizes as V8 structured-clone bytes (what postMessage copies in Chromium).",
+        "STOP with sounding voices, a full queue and batches in flight: epoch handling, stale ACKs and frames until the real DSP is silent.",
+        "Suspension requested by the page and by the device, and a DSP that traps inside process().",
+        "The synchronous cost of play() (admitted and rejected) and of stop() with 1,024 queued events."
+      ],
+      "excludes": [
+        "Real MessagePort and audio-thread latency, device underruns and audible output: see B12 in `npm run bench:browser` (Chromium, real AudioWorklet).",
+        "Batch size is bounded by the note limits, not by bytes: 64 events per batch, or one music piece of at most 4 × 512 notes."
+      ],
+      "rows": [
+        {
+          "scenario": "play() admitted",
+          "metric": "ms per call",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 1250000,
+            "p50": 0.00020799972116947174,
+            "p95": 0.0002500000409781933,
+            "p99": 0.0002920003607869148,
+            "mean": 0.00026445979149080815,
+            "max": 3.9112499998882413,
+            "p95Min": 0.0002500000409781933,
+            "p95Max": 0.0002500000409781933
+          },
+          "target": {
+            "op": "<=",
+            "limit": 0.05,
+            "text": "p95 ≤ 0.05 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "play() rejected (CAPACITY)",
+          "metric": "ms per call",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 1250000,
+            "p50": 0.0022919997572898865,
+            "p95": 0.0023750001564621925,
+            "p99": 0.0024580000899732113,
+            "mean": 0.0022982983244117347,
+            "max": 8.777540999930352,
+            "p95Min": 0.0023749996908009052,
+            "p95Max": 0.005458999890834093
+          },
+          "target": {
+            "op": "<=",
+            "limit": 0.05,
+            "text": "p95 ≤ 0.05 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "stop() with 1,024 queued events",
+          "metric": "ms per call",
+          "unit": "ms",
+          "stats": {
+            "runs": 5,
+            "count": 642732,
+            "p50": 0.00008300039917230606,
+            "p95": 0.0001659998670220375,
+            "p99": 0.0007090000435709953,
+            "mean": 0.00011370595489101535,
+            "max": 0.08633400034159422,
+            "p95Min": 0.0001250002533197403,
+            "p95Max": 0.0002919998951256275
+          },
+          "target": {
+            "op": "<=",
+            "limit": 1,
+            "text": "p95 ≤ 1 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Saturated quantum (deliver 4 batches + render)",
+          "metric": "ms per 128 frames",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 2000,
+            "p50": 0.009500000160187483,
+            "p95": 0.012000000104308128,
+            "p99": 0.022292000241577625,
+            "mean": 0.010404652998084202,
+            "max": 0.3802089998498559,
+            "p95Min": 0.012000000104308128,
+            "p95Max": 0.012000000104308128
+          },
+          "target": {
+            "op": "<=",
+            "limit": 0.26666666666666666,
+            "statistic": "p99",
+            "text": "p99 ≤ 0.267 ms (10% of the quantum)"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Frames until silence once STOP is delivered",
+          "metric": "frames",
+          "unit": "count",
+          "stats": {
+            "value": 63
+          },
+          "target": {
+            "op": "<=",
+            "limit": 64,
+            "text": "≤ 64 frames",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Largest serialized batch",
+          "metric": "bytes",
+          "unit": "bytes",
+          "stats": {
+            "value": 71339
+          },
+          "target": {
+            "op": "<=",
+            "limit": 131072,
+            "text": "≤ 128 KiB (one 4 × 512-note piece, the largest message the limits allow)",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Lost ACKs: queued events ≤ 1,024 notes + one stop per voice",
+          "observed": "max 1028",
+          "expected": "≤ 1028",
+          "status": "PASS"
+        },
+        {
+          "name": "Lost ACKs: batches in flight ≤ 4",
+          "observed": "max 4",
+          "expected": "≤ 4",
+          "status": "PASS"
+        },
+        {
+          "name": "Lost ACKs: CAPACITY only once the queue is full",
+          "observed": "0 early rejections",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Stalled processor: plays alone leave ≤ 4 batches in the port",
+          "observed": "4 messages, 924 bytes",
+          "expected": "≤ 4",
+          "status": "PASS"
+        },
+        {
+          "name": "Stalled processor: port traffic stays bounded across stop()/play() cycles",
+          "observed": "5 messages, 957 bytes after 200 cycles",
+          "expected": "≤ 5 messages",
+          "status": "PASS"
+        },
+        {
+          "name": "Saturated: queued events ≤ 1,024",
+          "observed": "max 1024",
+          "expected": "≤ 1024",
+          "status": "PASS"
+        },
+        {
+          "name": "Saturated: events per batch ≤ 64",
+          "observed": "max 64",
+          "expected": "≤ 64",
+          "status": "PASS"
+        },
+        {
+          "name": "Voices were sounding when STOP was sent",
+          "observed": "sounding",
+          "expected": "sounding",
+          "status": "PASS"
+        },
+        {
+          "name": "STOP empties the queue; sent batches keep their credits until acknowledged",
+          "observed": "pending 0, in flight 4",
+          "expected": "pending 0, in flight > 0",
+          "status": "PASS"
+        },
+        {
+          "name": "STOP is posted with the next epoch",
+          "observed": "{\"type\":\"stop\",\"epoch\":1}",
+          "expected": "{\"type\":\"stop\",\"epoch\":1}",
+          "status": "PASS"
+        },
+        {
+          "name": "ACKs of batches sent before STOP return their credits",
+          "observed": "returned",
+          "expected": "returned",
+          "status": "PASS"
+        },
+        {
+          "name": "A note after STOP is sent at once in the new epoch",
+          "observed": "sent",
+          "expected": "sent",
+          "status": "PASS"
+        },
+        {
+          "name": "Pause: notes played while paused are dropped",
+          "observed": "100 of 100 dropped",
+          "expected": "100 of 100",
+          "status": "PASS"
+        },
+        {
+          "name": "Pause: no note is sent after the pause takes effect",
+          "observed": "0 note events sent",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Resume: nothing queued before the pause is replayed",
+          "observed": "0 replayed",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Device suspension is reported and drops new notes",
+          "observed": "suspended, 0 queued",
+          "expected": "suspended, 0 queued",
+          "status": "PASS"
+        },
+        {
+          "name": "Device resumption restores running",
+          "observed": "running",
+          "expected": "running",
+          "status": "PASS"
+        },
+        {
+          "name": "Failure: the processor reports once and outputs silence",
+          "observed": "1 error message(s), silent true",
+          "expected": "1, silent",
+          "status": "PASS"
+        },
+        {
+          "name": "Failure: the controller fails once and releases the device",
+          "observed": "failed, 1 report(s), device released true",
+          "expected": "failed, 1 report, released",
+          "status": "PASS"
+        },
+        {
+          "name": "Failure: later notes queue nothing and unlock() rejects",
+          "observed": "queue +0, unlock STATE",
+          "expected": "queue +0, unlock STATE",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Lost ACKs": "10000 plays: 1028 admitted, 8972 rejected with CAPACITY, 4 batches sent; the queue then held 1028 events (176249 serialized bytes). Lost ACKs are never retransmitted, so the transport stays saturated: stop() cannot return a credit, because an unacknowledged batch may still be waiting in the port.",
+        "Saturated transport": "2000 quanta × 300 plays: 512772 admitted, 87228 rejected with CAPACITY, 511748 applied by the DSP (255.9 per quantum, i.e. 4 batches × 64 events per round trip); median queue 1024",
+        "Largest note batch (64 events, V8 structured-clone bytes)": 11074,
+        "Largest batch with a 4 × 512-note music event": 71339,
+        "Pause": "4 note events had been sent before the pause; queued notes became note_off events",
+        "Stalled processor with stop()/play() cycles": "batches keep their credits until acknowledged and a stop waits until the processor confirms the previous one, so 200 cycles left 5 messages (957 bytes) waiting in the port"
+      },
+      "status": "PASS",
+      "raw": "raw/B12.json"
+    },
+    {
+      "id": "B08",
+      "title": "At least 15 minutes on a named physical mobile device",
+      "status": "NOT RUN",
+      "note": "not executed: needs a named physical device",
+      "measures": [],
+      "excludes": [
+        "No physical Android or iPhone is attached to this machine. Desktop browsers, Playwright WebKit and simulators do not substitute for it."
+      ],
+      "raw": null
+    },
+    {
+      "id": "B10",
+      "title": "E0 versus optional E1/E2 worker execution",
+      "status": "N/A",
+      "note": "not applicable (no worker runtime)",
+      "measures": [],
+      "excludes": [
+        "PixelJS 0.0.1 has no E1/E2 worker runtime (engine.capabilities.workers is false), so there is nothing to compare against E0."
+      ],
+      "raw": null
+    }
+  ]
+}

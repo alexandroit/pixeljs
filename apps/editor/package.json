@@ -1,0 +1,19 @@
+{
+  "name": "@pixeljs/editor",
+  "version": "0.0.3",
+  "private": true,
+  "description": "PixelJS Sprite, Tilemap, and Sound authoring tools",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@pixeljs/core": "^0.0.3"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
+  }
+}

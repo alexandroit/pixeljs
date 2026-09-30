@@ -1,0 +1,21 @@
+[
+  "_pxa_initialize",
+  "_pxa_note_on",
+  "_pxa_note_off",
+  "_pxa_stop",
+  "_pxa_set_master_volume",
+  "_pxa_buffer_offset",
+  "_pxa_render",
+  "_pxa_is_active",
+  "_pxa_note_on_effect",
+  "_pxa_sound_begin",
+  "_pxa_sound_note",
+  "_pxa_sound_play",
+  "_pxa_music_begin",
+  "_pxa_music_track",
+  "_pxa_music_note",
+  "_pxa_music_play",
+  "_pxa_music_stop",
+  "_pxa_music_ended",
+  "_pxa_music_step"
+]

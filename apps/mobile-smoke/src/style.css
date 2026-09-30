@@ -1,0 +1,131 @@
+:root {
+  color-scheme: dark;
+  background-color: #0b0c10;
+  color: #e0e2ec;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  height: 100dvh;
+  padding: env(safe-area-inset-top, 8px) env(safe-area-inset-right, 8px)
+    env(safe-area-inset-bottom, 8px) env(safe-area-inset-left, 8px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #8c909e;
+}
+.layout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* A definite box that does not depend on the canvas, which the engine fits. */
+.screen {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 4px;
+}
+canvas {
+  border: 2px solid #1f222e;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  outline: none;
+}
+.side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+}
+.hud {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+}
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+button {
+  background: #1f222e;
+  color: #e0e2ec;
+  border: 1px solid #33384a;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+button:active {
+  background: #33384a;
+}
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 52px);
+  grid-template-rows: repeat(3, 52px);
+  gap: 6px;
+}
+.dpad button {
+  padding: 0;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dpad .up {
+  grid-column: 2;
+  grid-row: 1;
+}
+.dpad .left {
+  grid-column: 1;
+  grid-row: 2;
+}
+.dpad .center {
+  grid-column: 2;
+  grid-row: 2;
+}
+.dpad .right {
+  grid-column: 3;
+  grid-row: 2;
+}
+.dpad .down {
+  grid-column: 2;
+  grid-row: 3;
+}
+@media (orientation: landscape) {
+  .layout {
+    flex-direction: row;
+  }
+  .side {
+    width: 240px;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "name": "@pixeljs/core",
+  "version": "0.0.3",
+  "description": "An independent C17/WebAssembly pixel engine for JavaScript and TypeScript: indexed graphics, tilemaps, bitmap text, input and an AudioWorklet synthesizer.",
+  "keywords": [
+    "pixel-art",
+    "game-engine",
+    "webassembly",
+    "wasm",
+    "canvas",
+    "webgl2",
+    "audioworklet",
+    "retro",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "Alexandro Paixao Marques",
+  "homepage": "https://pixeljs.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexandroit/pixeljs.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/alexandroit/pixeljs/issues"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

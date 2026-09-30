@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an addition to the engine, the tools or the documentation.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to make?
+      description: The game or tool you are working on and what is missing or hard today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How the API or tool could look. Code sketches are welcome.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Workarounds you tried, or how other engines solve it.

@@ -1,0 +1,341 @@
+{
+  "environment": {
+    "tool": "tools/bench.mjs",
+    "recordedAt": "2026-09-30T19:05:48.227Z",
+    "git": {
+      "commit": "362f79cdfcbf326d885b53b7d9f622df506e8068",
+      "branch": "main",
+      "dirty": true
+    },
+    "build": {
+      "package": "@pixeljs/core",
+      "version": "0.0.1",
+      "manifest": "artifacts/build-manifest.json",
+      "matchesManifest": true,
+      "mismatches": [],
+      "files": {
+        "dist/index.js": "e1e97f432d0ef150708bfaf5f418d1d275c34e916d848814c7ead807107fd6fb",
+        "dist/api/engine.js": "c9f23d758a23bfcde9543d385e5745de63ed9d797b0cc35c7e1b87e1c3da52ea",
+        "dist/internal/commands.js": "12f593ba62fc5d837a035df577cfd78c388aac031226c24c20375e12c714468d",
+        "dist/internal/wasm/adapter.js": "a759603306a60c7c81369653a201ffc2de93e99b771e8bb416052b22e8cdc075",
+        "dist/internal/wasm/engine.mjs": "89208dccb0aeffb525818c7e10e59b191d5821e7f1c3c9c5950a45087c820ecc",
+        "dist/internal/wasm/engine.wasm": "228b9e11be82fa024aa1759a8af9ec9ac558f9f1d60af422d29e6527edfb5d1a",
+        "dist/internal/wasm/audio.wasm": "893cd370e6f8d780487ace24e92906e3f80e8337c51a932ba060d344377b0a78",
+        "dist/internal/audio/controller.js": "6656a17a5e9ac4d1aec0834b5d7246f51a315051c522e7cad93c449cd97a795b",
+        "dist/internal/audio/processor.js": "07238174a7fd0ba2de3a4748ec06f30922b90da265c429a476ea3d8d6cafc24e"
+      }
+    },
+    "buildFlags": "CMAKE_BUILD_TYPE=Release (tools/build-wasm.mjs); production validation enabled",
+    "pinnedToolchain": {
+      "emscripten": "6.0.10",
+      "node": "24.20.0",
+      "playwright": "1.63.0"
+    },
+    "node": "v24.20.0",
+    "os": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "arch": "arm64",
+      "version": "27.0.1",
+      "model": "Mac16,10"
+    },
+    "cpu": {
+      "model": "Apple M4",
+      "logical": 10
+    },
+    "memory": {
+      "totalBytes": 17179869184,
+      "freeBytesAtStart": 4549312512
+    },
+    "power": "Now drawing from 'AC Power'",
+    "loadAverage": {
+      "start": [
+        3.15,
+        6.2,
+        7.59
+      ],
+      "end": [
+        3.15,
+        6.2,
+        7.59
+      ]
+    },
+    "busy": true,
+    "finishedAt": "2026-09-30T19:05:49.132Z",
+    "busyThreshold": 2.5
+  },
+  "benchmarks": [
+    {
+      "id": "B12",
+      "title": "Audio transport: missing ACK/consumption, saturation, STOP, suspend and failure",
+      "runtime": "Node v24.20.0, real engine.wasm/audio.wasm from packages/core/dist; real AudioController and processor.js with a scripted MessagePort and AudioContext",
+      "measures": [
+        "The real AudioController (packages/core/dist) and the real AudioWorklet processor module running the real audio.wasm, joined by a scripted, ordered port that the benchmark pumps. Startup goes through unlock(), the DSP download and the init/ready handshake.",
+        "Queue, credit and port bounds when ACKs are lost, when the processor consumes nothing (including repeated stop()/play() cycles), and when the producer outruns a processor that acknowledges once per 128-frame quantum; batch sizes as V8 structured-clone bytes (what postMessage copies in Chromium).",
+        "STOP with sounding voices, a full queue and batches in flight: epoch handling, stale ACKs and frames until the real DSP is silent.",
+        "Suspension requested by the page and by the device, and a DSP that traps inside process().",
+        "The synchronous cost of play() (admitted and rejected) and of stop() with 1,024 queued events."
+      ],
+      "excludes": [
+        "Real MessagePort and audio-thread latency, device underruns and audible output: see B12 in `npm run bench:browser` (Chromium, real AudioWorklet).",
+        "An earlier proposal of 4 KiB per batch was never an implemented limit; the largest batch is compared with it for information."
+      ],
+      "rows": [
+        {
+          "scenario": "play() admitted",
+          "metric": "ms per call",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 250000,
+            "p50": 0.00020799999998644125,
+            "p95": 0.0002499999999940883,
+            "p99": 0.0002920000000017353,
+            "mean": 0.0002107181079999508,
+            "max": 0.34741699999997877,
+            "p95Min": 0.0002499999999940883,
+            "p95Max": 0.0002499999999940883
+          },
+          "target": {
+            "op": "<=",
+            "limit": 0.05,
+            "text": "p95 ≤ 0.05 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "play() rejected (CAPACITY)",
+          "metric": "ms per call",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 85922,
+            "p50": 0.002291999999897598,
+            "p95": 0.002375000000029104,
+            "p99": 0.0024580000000469227,
+            "mean": 0.0022897306045016968,
+            "max": 0.15204099999999698,
+            "p95Min": 0.002375000000029104,
+            "p95Max": 0.002375000000029104
+          },
+          "target": {
+            "op": "<=",
+            "limit": 0.05,
+            "text": "p95 ≤ 0.05 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "stop() with 1,024 queued events",
+          "metric": "ms per call",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 914,
+            "p50": 0.00012500000002546585,
+            "p95": 0.0002500000000509317,
+            "p99": 0.0014169999999467109,
+            "mean": 0.0002052231947479057,
+            "max": 0.017125000000078217,
+            "p95Min": 0.0002500000000509317,
+            "p95Max": 0.0002500000000509317
+          },
+          "target": {
+            "op": "<=",
+            "limit": 1,
+            "text": "p95 ≤ 1 ms",
+            "statistic": "p95"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Saturated quantum (deliver 4 batches + render)",
+          "metric": "ms per 128 frames",
+          "unit": "ms",
+          "stats": {
+            "runs": 1,
+            "count": 200,
+            "p50": 0.012124999999997499,
+            "p95": 0.026291999999997984,
+            "p99": 0.12433400000000461,
+            "mean": 0.02078480500000019,
+            "max": 0.7706660000000056,
+            "p95Min": 0.026291999999997984,
+            "p95Max": 0.026291999999997984
+          },
+          "target": {
+            "op": "<=",
+            "limit": 0.26666666666666666,
+            "statistic": "p99",
+            "text": "p99 ≤ 0.267 ms (10% of the quantum)"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Frames until silence once STOP is delivered",
+          "metric": "frames",
+          "unit": "count",
+          "stats": {
+            "value": 63
+          },
+          "target": {
+            "op": "<=",
+            "limit": 64,
+            "text": "≤ 64 frames",
+            "statistic": "value"
+          },
+          "status": "PASS"
+        },
+        {
+          "scenario": "Largest serialized batch",
+          "metric": "bytes",
+          "unit": "bytes",
+          "stats": {
+            "value": 71339
+          },
+          "target": {
+            "op": "<=",
+            "limit": 4096,
+            "text": "≤ 4 KiB (an earlier proposal, never a limit)",
+            "statistic": "value"
+          },
+          "status": "FAIL"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Lost ACKs: queued events ≤ 1,024 notes + one stop per voice",
+          "observed": "max 1028",
+          "expected": "≤ 1028",
+          "status": "PASS"
+        },
+        {
+          "name": "Lost ACKs: batches in flight ≤ 4",
+          "observed": "max 4",
+          "expected": "≤ 4",
+          "status": "PASS"
+        },
+        {
+          "name": "Lost ACKs: CAPACITY only once the queue is full",
+          "observed": "0 early rejections",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Stalled processor: plays alone leave ≤ 4 batches in the port",
+          "observed": "4 messages, 924 bytes",
+          "expected": "≤ 4",
+          "status": "PASS"
+        },
+        {
+          "name": "Stalled processor: port traffic stays bounded across stop()/play() cycles",
+          "observed": "5 messages, 957 bytes after 20 cycles",
+          "expected": "≤ 5 messages",
+          "status": "PASS"
+        },
+        {
+          "name": "Saturated: queued events ≤ 1,024",
+          "observed": "max 1024",
+          "expected": "≤ 1024",
+          "status": "PASS"
+        },
+        {
+          "name": "Saturated: events per batch ≤ 64",
+          "observed": "max 64",
+          "expected": "≤ 64",
+          "status": "PASS"
+        },
+        {
+          "name": "Voices were sounding when STOP was sent",
+          "observed": "sounding",
+          "expected": "sounding",
+          "status": "PASS"
+        },
+        {
+          "name": "STOP empties the queue; sent batches keep their credits until acknowledged",
+          "observed": "pending 0, in flight 4",
+          "expected": "pending 0, in flight > 0",
+          "status": "PASS"
+        },
+        {
+          "name": "STOP is posted with the next epoch",
+          "observed": "{\"type\":\"stop\",\"epoch\":1}",
+          "expected": "{\"type\":\"stop\",\"epoch\":1}",
+          "status": "PASS"
+        },
+        {
+          "name": "ACKs of batches sent before STOP return their credits",
+          "observed": "returned",
+          "expected": "returned",
+          "status": "PASS"
+        },
+        {
+          "name": "A note after STOP is sent at once in the new epoch",
+          "observed": "sent",
+          "expected": "sent",
+          "status": "PASS"
+        },
+        {
+          "name": "Pause: notes played while paused are dropped",
+          "observed": "100 of 100 dropped",
+          "expected": "100 of 100",
+          "status": "PASS"
+        },
+        {
+          "name": "Pause: no note is sent after the pause takes effect",
+          "observed": "0 note events sent",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Resume: nothing queued before the pause is replayed",
+          "observed": "0 replayed",
+          "expected": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Device suspension is reported and drops new notes",
+          "observed": "suspended, 0 queued",
+          "expected": "suspended, 0 queued",
+          "status": "PASS"
+        },
+        {
+          "name": "Device resumption restores running",
+          "observed": "running",
+          "expected": "running",
+          "status": "PASS"
+        },
+        {
+          "name": "Failure: the processor reports once and outputs silence",
+          "observed": "1 error message(s), silent true",
+          "expected": "1, silent",
+          "status": "PASS"
+        },
+        {
+          "name": "Failure: the controller fails once and releases the device",
+          "observed": "failed, 1 report(s), device released true",
+          "expected": "failed, 1 report, released",
+          "status": "PASS"
+        },
+        {
+          "name": "Failure: later notes queue nothing and unlock() rejects",
+          "observed": "queue +0, unlock STATE",
+          "expected": "queue +0, unlock STATE",
+          "status": "PASS"
+        }
+      ],
+      "observations": {
+        "Lost ACKs": "2000 plays: 1028 admitted, 972 rejected with CAPACITY, 4 batches sent; the queue then held 1028 events (176249 serialized bytes). Lost ACKs are never retransmitted, so the transport stays saturated: stop() cannot return a credit, because an unacknowledged batch may still be waiting in the port.",
+        "Saturated transport": "200 quanta × 300 plays: 51972 admitted, 8028 rejected with CAPACITY, 50948 applied by the DSP (254.7 per quantum, i.e. 4 batches × 64 events per round trip); median queue 1024",
+        "Largest note batch (64 events, V8 structured-clone bytes)": 11074,
+        "Largest batch with a 4 × 512-note music event": 71339,
+        "Pause": "4 note events had been sent before the pause; queued notes became note_off events",
+        "Stalled processor with stop()/play() cycles": "batches keep their credits until acknowledged and a stop waits until the processor confirms the previous one, so 20 cycles left 5 messages (957 bytes) waiting in the port"
+      },
+      "status": "FAIL",
+      "raw": "raw/B12.json"
+    }
+  ]
+}

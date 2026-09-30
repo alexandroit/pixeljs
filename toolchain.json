@@ -1,0 +1,32 @@
+{
+  "node": "24.20.0",
+  "npm": "12.0.2",
+  "typescript": "7.0.2",
+  "vite": "8.3.1",
+  "playwright": "1.63.0",
+  "prettier": "3.9.9",
+  "cmake": "4.4.3",
+  "ninja": "1.13.0",
+  "nativeCompiler": {
+    "name": "AppleClang",
+    "version": "21.0.0 (clang-2100.3.34.2)"
+  },
+  "emscripten": {
+    "version": "6.0.10",
+    "emsdkCommit": "e566f7bdcc7735f44037911c24b87a58a3c93145",
+    "releaseHash": "666337b525e673e769121856d175f6f52b8ead64",
+    "compilerRevision": "d6c521a7f05449857c76bd99e396895583cf2083"
+  },
+  "platform": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "release": "27.0.0"
+  },
+  "sourceVerificationDate": "2026-09-29",
+  "sources": [
+    "https://github.com/emscripten-core/emsdk/blob/e566f7bdcc7735f44037911c24b87a58a3c93145/emscripten-releases-tags.json",
+    "https://registry.npmjs.org/typescript/7.0.2",
+    "https://pypi.org/pypi/cmake/4.4.3/json",
+    "https://pypi.org/pypi/ninja/1.13.0/json"
+  ]
+}

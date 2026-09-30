@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Play Pac-Man in the PixelJS arcade, then make your own game. PixelJS is an independent C17 and WebAssembly pixel game engine for JavaScript and TypeScript, on npm."
+    />
+    <meta name="theme-color" content="#f5f1e8" />
+    <title>PixelJS — The arcade is open.</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header wrap">
+      <a class="brand" href="#" aria-label="PixelJS home"
+        ><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>pixel<span
+          >js</span
+        ></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#playground">Playground</a><a href="#start">Get started</a
+        ><a href="#reference">Reference</a>
+      </nav>
+      <a class="version" href="https://www.npmjs.com/package/@pixeljs/core"
+        ><span class="status-dot"></span>0.0.3 / ON NPM</a
+      >
+    </header>
+
+    <main id="main">
+      <section class="arcade-hero wrap" id="playground" aria-labelledby="hero-title">
+        <div class="arcade-intro">
+          <p class="eyebrow">
+            <span class="tiny-star" aria-hidden="true">✳</span> THE PIXELJS ARCADE / 001
+          </p>
+          <h1 id="hero-title">Hello, <span>Pac-Man.</span></h1>
+          <p class="hero-description">
+            A little maze. A lot of second chances. Collect the pellets, dodge the ghosts, and make
+            one more turn.
+          </p>
+          <div class="arcade-tags">
+            <span>BUILT WITH PIXELJS</span><span>C17 + WASM</span><span>JS + TS</span>
+          </div>
+          <a class="text-link build-link" href="#start"
+            >Play it. Then see how it works. <span aria-hidden="true">↘</span></a
+          >
+        </div>
+
+        <div class="game-shell">
+          <div class="game-titlebar">
+            <span><span class="status-dot"></span>PIXELJS / PAC-MAN</span>
+            <span id="game-state">LOADING</span>
+          </div>
+          <dl class="scoreboard" aria-label="Game score">
+            <div class="score-total">
+              <dt>SCORE</dt>
+              <dd id="score-count">0</dd>
+            </div>
+            <div>
+              <dt>LIVES</dt>
+              <dd id="lives-count">3</dd>
+            </div>
+            <div>
+              <dt>LEVEL</dt>
+              <dd id="level-count">1</dd>
+            </div>
+            <div>
+              <dt>PELLETS</dt>
+              <dd id="pellets-count">—</dd>
+            </div>
+          </dl>
+          <div class="game-stage">
+            <canvas
+              id="game"
+              width="224"
+              height="256"
+              tabindex="0"
+              aria-label="Pac-Man maze game. Use arrow keys, W A S D, swipe, or the direction buttons to move. Collect pellets and avoid the ghosts."
+              aria-describedby="game-instructions"
+              >Your browser needs canvas and WebAssembly to run this game.</canvas
+            >
+            <div class="game-loading" id="game-loading" role="status">Loading the arcade…</div>
+          </div>
+          <div class="arcade-status">
+            <span class="ready-light" aria-hidden="true"></span>
+            <p id="game-status" role="status" aria-live="polite">
+              READY · Choose a direction to play
+            </p>
+          </div>
+          <div class="game-footer">
+            <div class="direction-pad" role="group" aria-label="Movement controls">
+              <button type="button" data-direction="up" aria-label="Move up">
+                <span aria-hidden="true">↑</span>
+              </button>
+              <button type="button" data-direction="left" aria-label="Move left">
+                <span aria-hidden="true">←</span>
+              </button>
+              <span class="direction-center" aria-hidden="true"></span>
+              <button type="button" data-direction="right" aria-label="Move right">
+                <span aria-hidden="true">→</span>
+              </button>
+              <button type="button" data-direction="down" aria-label="Move down">
+                <span aria-hidden="true">↓</span>
+              </button>
+            </div>
+            <div class="game-controls">
+              <p id="game-instructions">
+                Arrow keys / WASD / gamepad<br /><span
+                  >Swipe the maze or use the pad. Sound starts with your first move.</span
+                >
+              </p>
+              <div class="game-buttons">
+                <button id="pause-game" type="button" disabled>Pause</button>
+                <button id="restart-game" type="button" disabled>Restart</button>
+                <button id="dispose-game" type="button" disabled>Dispose</button>
+                <button id="mute-game" type="button" aria-pressed="false" disabled>Mute</button>
+                <button id="capture-game" type="button" disabled>Screenshot</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="arcade-notes" aria-label="Game and engine notes">
+          <div class="mission-note">
+            <span class="mission-icon" aria-hidden="true">↳</span>
+            <p id="mission-status" class="mission-status" aria-live="polite">
+              Clear the maze to reach the next level. Power pellets turn the chase around.
+            </p>
+          </div>
+          <dl class="runtime-stats">
+            <div>
+              <dt>Renderer</dt>
+              <dd id="renderer-stat">Loading</dd>
+            </div>
+            <div>
+              <dt>Core memory</dt>
+              <dd id="memory-stat">—</dd>
+            </div>
+            <div>
+              <dt>Frames drawn</dt>
+              <dd id="frame-stat">0</dd>
+            </div>
+          </dl>
+          <p class="runtime-message" id="runtime-message" role="status" aria-live="polite">
+            Loading the packaged WebAssembly engine.
+          </p>
+          <p class="small-print">
+            Live engine values, not a benchmark. Sounds and music are synthesized by the engine.
+          </p>
+        </aside>
+      </section>
+
+      <div class="capability-strip">
+        <div class="wrap">
+          <span>SMALL WORLDS. MADE BY YOU.</span><span aria-hidden="true">✳</span
+          ><span>FIRST-CLASS JAVASCRIPT</span><span aria-hidden="true">✳</span
+          ><span>TYPESCRIPT INCLUDED</span><span aria-hidden="true">✳</span
+          ><span>ONE RUNTIME PACKAGE</span>
+        </div>
+      </div>
+
+      <section class="principles wrap section-space" aria-label="Engine principles">
+        <article>
+          <span class="card-number">01</span>
+          <div class="mini-pixels coral" aria-hidden="true"></div>
+          <h3>A small surface.</h3>
+          <p>
+            Draw shapes, sprites, maps and text. Play sounds and music. Read keys, touches and
+            gamepads. Own your game loop and every pixel of it.
+          </p>
+        </article>
+        <article>
+          <span class="card-number">02</span>
+          <div class="mini-pixels green" aria-hidden="true"></div>
+          <h3>A clear boundary.</h3>
+          <p>
+            C handles the framebuffer. The web host handles the browser. Engine instances have
+            explicit lifetimes and resources have owners.
+          </p>
+        </article>
+        <article>
+          <span class="card-number">03</span>
+          <div class="mini-pixels purple" aria-hidden="true"></div>
+          <h3>JavaScript belongs here.</h3>
+          <p>
+            Use plain JavaScript or TypeScript. The same ESM runtime and runtime validation serve
+            both, with declarations included.
+          </p>
+        </article>
+      </section>
+
+      <section class="start-section section-space" id="start" aria-labelledby="start-title">
+        <div class="wrap">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">002 / MAKE IT YOURS</p>
+              <h2 id="start-title">The game is just the beginning.</h2>
+            </div>
+            <p>PixelJS is MIT licensed<br />and published on npm.</p>
+          </div>
+          <div class="start-grid">
+            <div class="setup-copy">
+              <span class="preview-tag">0.0.3 ON NPM</span>
+              <h3>Open the hood.<br />Make your next game.</h3>
+              <p>
+                Start from a small, playable starter in JavaScript or strict TypeScript, or add
+                <strong>@pixeljs/core</strong> to your own project. The tutorial builds a first game
+                step by step.
+              </p>
+              <code class="install-command">npm create @pixeljs@latest my-game</code
+              ><code class="install-command">npm install @pixeljs/core</code>
+              <p class="small-print">
+                MIT license. Published by GitHub Actions with npm provenance.
+              </p>
+              <a
+                class="text-link"
+                href="https://github.com/alexandroit/pixeljs/blob/main/docs/tutorial.md"
+                >Read the tutorial <span aria-hidden="true">↗</span></a
+              ><a
+                class="text-link"
+                href="https://github.com/alexandroit/pixeljs/blob/main/docs/api.md"
+                >API reference <span aria-hidden="true">↗</span></a
+              ><a class="text-link" href="./editor/"
+                >Open PixelJS Studio, the editor <span aria-hidden="true">↗</span></a
+              ><a class="text-link" href="https://github.com/alexandroit/pixeljs"
+                >Source on GitHub <span aria-hidden="true">↗</span></a
+              ><a class="text-link" href="./examples/javascript/index.html"
+                >Open standalone JS example <span aria-hidden="true">↗</span></a
+              >
+            </div>
+            <div class="source-panel">
+              <div class="source-toolbar">
+                <div class="source-tabs" role="tablist" aria-label="Example language">
+                  <button
+                    id="tab-javascript"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="source-code"
+                    data-language="javascript"
+                    type="button"
+                  >
+                    JavaScript</button
+                  ><button
+                    id="tab-typescript"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="source-code"
+                    data-language="typescript"
+                    type="button"
+                    tabindex="-1"
+                  >
+                    TypeScript
+                  </button>
+                </div>
+                <button id="copy-source" class="copy-source" type="button" disabled>
+                  Copy source
+                </button>
+              </div>
+              <div class="source-label">
+                <span id="source-filename">examples/javascript/game.js</span
+                ><span>REAL EXAMPLE FILE</span>
+              </div>
+              <pre
+                id="source-code"
+                role="tabpanel"
+                tabindex="0"
+                aria-labelledby="tab-javascript"
+              ><code id="source-text">Loading example source…</code></pre>
+              <p id="copy-status" class="source-status" role="status" aria-live="polite">
+                This is the real runnable game source, loaded directly from its example file.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="reference-section wrap section-space"
+        id="reference"
+        aria-labelledby="reference-title"
+      >
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">003 / A FEW GOOD BUILDING BLOCKS</p>
+            <h2 id="reference-title">Know what you can make.</h2>
+          </div>
+          <p>A small, complete engine.<br />Tested features and open work stay distinct.</p>
+        </div>
+        <div class="reference-grid">
+          <nav class="reference-nav" aria-label="API categories">
+            <a href="#api-lifecycle">Engine lifecycle <span>01</span></a
+            ><a href="#api-graphics">Graphics & resources <span>02</span></a
+            ><a href="#api-input">Input <span>03</span></a
+            ><a href="#api-status">Status <span>04</span></a>
+          </nav>
+          <div class="reference-content">
+            <article id="api-lifecycle">
+              <span class="doc-label">01 / LIFECYCLE</span>
+              <h3>One engine, one explicit lifetime.</h3>
+              <p>
+                <code>await createEngine({ canvas, width, height })</code> loads an instance. Use
+                <code>start({ update, draw })</code> to begin the loop, <code>pause()</code> and
+                <code>resume()</code> to control it, and <code>await dispose()</code> to release it.
+              </p>
+              <p>
+                Keep drawing in the draw callback. Dispose makes the engine unavailable immediately;
+                cleanup waits for an active callback to finish. Create a fresh instance to restart
+                after disposal.
+              </p>
+            </article>
+            <article id="api-graphics">
+              <span class="doc-label">02 / GRAPHICS</span>
+              <h3>Pixels with a place to belong.</h3>
+              <p>
+                Pixels, lines, rectangles, circles, ellipses, triangles, flood fill and color
+                remapping; sprites with flips, rotation and scaling; tilemaps; built-in and custom
+                bitmap text; camera and clipping. Colors come from a palette of up to 256 colors,
+                and every browser draws exactly the same pixels.
+              </p>
+              <p>
+                Load PNG images, maps, fonts, sounds and music one by one or from one asset
+                manifest, all or nothing. Save screenshots as PNG and recordings as GIF. Raw heap
+                offsets and internal handles stay private.
+              </p>
+            </article>
+            <article id="api-input">
+              <span class="doc-label">03 / INPUT</span>
+              <h3>Read intent, once per tick.</h3>
+              <p>
+                <code>input.isDown(code)</code>, <code>wasPressed(code)</code>, and
+                <code>wasReleased(code)</code> use browser key codes such as
+                <code>ArrowLeft</code> and <code>KeyA</code>. Up to ten pointers and touches report
+                game-pixel coordinates, and standard gamepads report named buttons and sticks.
+              </p>
+              <p>
+                Read the input snapshot in update. Focus the canvas for keyboard play; blur and
+                lifecycle changes reset input. The game host adds swipe and direction-button
+                controls for this demo.
+              </p>
+            </article>
+            <article id="api-status">
+              <span class="doc-label">04 / STATUS</span>
+              <h3>Small on purpose. Honest by default.</h3>
+              <p>
+                Version 0.0.3 connects a C17 raster core and synthesizer, a private WASM bridge, a
+                typed ESM host, a browser editor and starters. It is a first release: tested in
+                Chromium, Firefox and WebKit and in the Android emulator, not yet on physical
+                phones.
+              </p>
+              <div class="status-list">
+                <div>
+                  <span class="status-check">↗</span><span>Included</span
+                  ><strong>Graphics · maps · text · audio · music · input · assets · editor</strong>
+                </div>
+                <div>
+                  <span class="status-future">○</span><span>Still open</span
+                  ><strong>Physical phones · iOS builds · Workers · saving</strong>
+                </div>
+              </div>
+              <p>
+                Browser compatibility, mobile performance, and memory safety require concrete tests
+                on each target. A live demo alone does not establish those guarantees.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="closing wrap">
+        <p class="eyebrow">THERE'S ROOM FOR ONE MORE SMALL WORLD.</p>
+        <h2>What will yours look like<span>?</span></h2>
+        <a class="button button-dark" href="#start"
+          >Make your first move <span aria-hidden="true">↗</span></a
+        ><span class="closing-spark" aria-hidden="true">✳</span>
+      </section>
+    </main>
+    <footer class="site-footer wrap">
+      <a class="brand" href="#">pixel<span>js</span></a>
+      <p>Small worlds.<br />Made by you.</p>
+      <span>0.0.3 · MIT · <a href="https://github.com/alexandroit/pixeljs">GITHUB</a></span
+      ><a href="#main">Back to top ↑</a>
+    </footer>
+  </body>
+</html>

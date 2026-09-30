@@ -1,0 +1,50 @@
+{
+  "format": "pixeljs-sound",
+  "version": 1,
+  "waveform": "triangle",
+  "bpm": 200,
+  "stepsPerBeat": 4,
+  "volume": 0.35,
+  "attack": 0.005,
+  "decay": 0.02,
+  "sustain": 0.7,
+  "release": 0.05,
+  "notes": [
+    {
+      "step": 0,
+      "pitch": "E5",
+      "length": 2
+    },
+    {
+      "step": 2,
+      "pitch": "G5",
+      "length": 2
+    },
+    {
+      "step": 4,
+      "pitch": "D5",
+      "length": 2
+    },
+    {
+      "step": 6,
+      "pitch": "F5",
+      "length": 2
+    },
+    {
+      "step": 8,
+      "pitch": "C5",
+      "length": 2
+    },
+    {
+      "step": 10,
+      "pitch": "E5",
+      "length": 2
+    },
+    {
+      "step": 12,
+      "pitch": "G5",
+      "length": 4,
+      "effect": "vibrato"
+    }
+  ]
+}

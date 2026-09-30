@@ -1,0 +1,56 @@
+{
+  "format": "pixeljs-sound",
+  "version": 1,
+  "waveform": "square",
+  "bpm": 300,
+  "stepsPerBeat": 4,
+  "volume": 0.3,
+  "attack": 0.005,
+  "decay": 0.02,
+  "sustain": 0.7,
+  "release": 0.05,
+  "notes": [
+    {
+      "step": 0,
+      "length": 2,
+      "pitch": "B5",
+      "effect": "slide"
+    },
+    {
+      "step": 2,
+      "length": 2,
+      "pitch": "G5",
+      "effect": "slide"
+    },
+    {
+      "step": 4,
+      "length": 2,
+      "pitch": "E5",
+      "effect": "slide"
+    },
+    {
+      "step": 6,
+      "length": 2,
+      "pitch": "C5",
+      "effect": "slide"
+    },
+    {
+      "step": 8,
+      "length": 2,
+      "pitch": "A4",
+      "effect": "slide"
+    },
+    {
+      "step": 10,
+      "length": 2,
+      "pitch": "F4",
+      "effect": "slide"
+    },
+    {
+      "step": 12,
+      "length": 6,
+      "pitch": "D4",
+      "effect": "fadeout"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pac-Man — PixelJS JavaScript example</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./main.js"></script>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">PIXELJS / JAVASCRIPT ARCADE EXAMPLE</p>
+      <h1>Pac-Man</h1>
+      <p>
+        Clear the maze, dodge the ghosts, and grab a power pellet to turn the chase around. Use
+        arrows, WASD, a gamepad, or swipe on the maze. Sound starts with your first key press or
+        tap.
+      </p>
+      <canvas
+        width="224"
+        height="256"
+        tabindex="0"
+        aria-label="Pac-Man. Use arrow keys, WASD, swipe, or the direction buttons to move."
+      ></canvas>
+      <div class="direction-pad" aria-label="Game directions">
+        <button data-direction="up" type="button" aria-label="Move up">↑</button>
+        <button data-direction="left" type="button" aria-label="Move left">←</button>
+        <button data-direction="down" type="button" aria-label="Move down">↓</button>
+        <button data-direction="right" type="button" aria-label="Move right">→</button>
+      </div>
+      <div class="controls">
+        <p data-status role="status">Loading the WebAssembly core…</p>
+        <button data-pause type="button" disabled>Pause</button>
+        <button data-restart type="button" disabled>Restart</button>
+        <button data-mute type="button" aria-pressed="false" disabled>Mute</button>
+        <button data-screenshot type="button" disabled>Screenshot</button>
+      </div>
+      <p class="note">
+        ESM JavaScript → private WASM bridge → C17 framebuffer + AudioWorklet synthesis.
+      </p>
+    </main>
+  </body>
+</html>

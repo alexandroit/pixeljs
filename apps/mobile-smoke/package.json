@@ -1,0 +1,23 @@
+{
+  "name": "@pixeljs/mobile-smoke",
+  "version": "0.0.3",
+  "private": true,
+  "description": "Capacitor mobile smoke application for PixelJS engine",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@pixeljs/core": "^0.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/cli": "8.5.2",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
+  }
+}

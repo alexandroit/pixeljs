@@ -1,0 +1,32 @@
+{
+  "format": "pixeljs-music",
+  "version": 1,
+  "bpm": 150,
+  "stepsPerBeat": 4,
+  "length": 4,
+  "loop": true,
+  "tracks": [
+    {
+      "voice": 2,
+      "waveform": "square",
+      "volume": 0.12,
+      "attack": 0.005,
+      "decay": 0.02,
+      "sustain": 0.8,
+      "release": 0.02,
+      "notes": [
+        {
+          "step": 0,
+          "length": 3,
+          "pitch": "D4",
+          "effect": "slide"
+        },
+        {
+          "step": 3,
+          "length": 1,
+          "pitch": "D5"
+        }
+      ]
+    }
+  ]
+}

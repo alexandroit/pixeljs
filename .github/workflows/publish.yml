@@ -1,0 +1,194 @@
+name: Publish to npm
+
+# Dispatch this workflow on the release tag vX.Y.Z with the SHA-512 digests
+# of the two tarballs that passed CI for that commit (the CI run summary
+# prints them). It verifies the source again, rebuilds, checks that the
+# tarballs are byte-identical to the tested ones and publishes those exact
+# bytes with provenance. Nobody publishes from a laptop. See docs/release.md.
+on:
+  workflow_dispatch:
+    inputs:
+      core_sha512:
+        description: SHA-512 hex digest of the tested @pixeljs/core tarball
+        required: true
+        type: string
+      create_sha512:
+        description: SHA-512 hex digest of the tested @pixeljs/create tarball
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish-${{ github.repository }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  publish:
+    name: Verify and publish with provenance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    # The environment only admits release tags and holds the one-time
+    # NPM_TOKEN used before npm trusted publishing is configured.
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/@pixeljs/core
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      CC: clang-18
+      CXX: clang++-18
+      CI: 'true'
+      PIXELJS_USE_BUNDLED_CHROMIUM: '1'
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+      LSAN_OPTIONS: exitcode=23
+    steps:
+      - name: Check out the tag without retained credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require the matching release tag
+        run: |
+          version="$(node -p "require('./packages/core/package.json').version")"
+          if [ "$GITHUB_REF" != "refs/tags/v$version" ]; then
+            echo "::error::Dispatch this workflow on tag v$version (got $GITHUB_REF)."
+            exit 1
+          fi
+          node tools/check-release.mjs "v$version"
+      - name: Require well-formed digests
+        env:
+          CORE_SHA512: ${{ inputs.core_sha512 }}
+          CREATE_SHA512: ${{ inputs.create_sha512 }}
+        run: |
+          for digest in "$CORE_SHA512" "$CREATE_SHA512"; do
+            if [[ ! "$(tr '[:upper:]' '[:lower:]' <<<"$digest" | tr -d '[:space:]')" =~ ^[0-9a-f]{128}$ ]]; then
+              echo "::error::Each digest must be exactly 128 hexadecimal characters."
+              exit 1
+            fi
+          done
+      - name: Set up the pinned toolchain
+        uses: ./.github/actions/setup-pixeljs
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=low
+      - name: Run every verification gate
+        run: npm run verify 2>&1 | tee artifacts/ci/verify.txt
+      - name: Reject versions that already exist
+        run: |
+          set -euo pipefail
+          for workspace in packages/core packages/create; do
+            spec="$(node -p "const p = require('./$workspace/package.json'); p.name + '@' + p.version")"
+            if npm view "$spec" version --json --registry=https://registry.npmjs.org > "$RUNNER_TEMP/check.json" 2>/dev/null; then
+              echo "::error::$spec already exists; published versions are immutable."
+              exit 1
+            fi
+            node -e 'const r = JSON.parse(require("fs").readFileSync(process.env.RUNNER_TEMP + "/check.json", "utf8") || "{}"); if (r.error?.code !== "E404") throw new Error("The registry did not confirm that the version is absent.");'
+          done
+      - name: Build the immutable tarballs and match the tested digests
+        env:
+          CORE_SHA512: ${{ inputs.core_sha512 }}
+          CREATE_SHA512: ${{ inputs.create_sha512 }}
+        run: |
+          set -euo pipefail
+          mkdir artifact
+          npm pack --ignore-scripts --pack-destination artifact -w packages/core -w packages/create
+          check() {
+            local expected actual
+            expected="$(tr '[:upper:]' '[:lower:]' <<<"$2" | tr -d '[:space:]')"
+            actual="$(sha512sum "$1" | awk '{print $1}')"
+            if [ "$actual" != "$expected" ]; then
+              echo "::error::$1 digest mismatch: expected $expected, got $actual"
+              exit 1
+            fi
+          }
+          check artifact/pixeljs-core-*.tgz "$CORE_SHA512"
+          check artifact/pixeljs-create-*.tgz "$CREATE_SHA512"
+          (cd artifact && sha512sum -- *.tgz > SHA512SUMS && cat SHA512SUMS)
+      - name: Generate the production dependency SBOMs
+        run: |
+          npm sbom --omit=dev --sbom-format cyclonedx -w packages/core > artifact/pixeljs-core.cdx.json
+          npm sbom --omit=dev --sbom-format cyclonedx -w packages/create > artifact/pixeljs-create.cdx.json
+      - name: Keep the published tarballs, digests and SBOMs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npm-release
+          retention-days: 90
+          if-no-files-found: error
+          path: artifact/
+      - name: Point npm at the public registry
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.20.0'
+          package-manager-cache: false
+          registry-url: https://registry.npmjs.org
+      - name: Publish the core runtime, then the scaffolding tool
+        env:
+          # Only for a package's first publication. Once trusted publishing is
+          # configured for this workflow, delete this secret; npm then uses
+          # the OIDC token of this job.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          npm install --global npm@12.0.2 --ignore-scripts --no-audit --no-fund
+          # "./" makes npm read a local file: "artifact/x.tgz" alone is taken
+          # for the GitHub repository shorthand "user/repo".
+          npm publish ./artifact/pixeljs-core-*.tgz --access public --provenance --registry=https://registry.npmjs.org
+          npm publish ./artifact/pixeljs-create-*.tgz --access public --provenance --registry=https://registry.npmjs.org
+      - name: Verify the registry serves the exact published bytes
+        run: |
+          set -euo pipefail
+          for archive in artifact/*.tgz; do
+            spec="$(tar -xOzf "$archive" package/package.json | node -p 'const p = JSON.parse(require("fs").readFileSync(0, "utf8")); p.name + "@" + p.version')"
+            expected="sha512-$(openssl dgst -sha512 -binary "$archive" | base64 -w0)"
+            integrity=""
+            # A new package's metadata can take minutes to reach the registry's
+            # read replicas after its tarball is served (more than five minutes seen).
+            for _ in $(seq 1 40); do
+              integrity="$(npm view "$spec" dist.integrity --registry=https://registry.npmjs.org 2>/dev/null || true)"
+              [ -n "$integrity" ] && break
+              sleep 15
+            done
+            if [ "$integrity" != "$expected" ]; then
+              echo "::error::$spec registry integrity '$integrity' differs from the verified tarball."
+              exit 1
+            fi
+            echo "$spec verified: $integrity"
+          done
+
+  release:
+    name: Attach the tarballs to the GitHub release
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download the published tarballs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-release
+          path: artifact
+      - name: Create or complete the release without replacing assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "PixelJS $TAG" \
+              --notes "Published to npm with provenance: @pixeljs/core and @pixeljs/create ${TAG#v}. See CHANGELOG.md."
+          fi
+          existing="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
+          for file in artifact/*.tgz artifact/SHA512SUMS artifact/*.cdx.json; do
+            if grep -qxF "$(basename "$file")" <<<"$existing"; then
+              echo "$(basename "$file") is already attached; existing assets are preserved."
+            else
+              gh release upload "$TAG" "$file" --repo "$GITHUB_REPOSITORY"
+            fi
+          done

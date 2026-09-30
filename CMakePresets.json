@@ -1,0 +1,34 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 24, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "native",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/native",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "safety",
+      "inherits": "native",
+      "binaryDir": "${sourceDir}/build/safety",
+      "cacheVariables": { "PX_SANITIZE": "ON" }
+    },
+    {
+      "name": "release",
+      "inherits": "native",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "native", "configurePreset": "native" },
+    { "name": "safety", "configurePreset": "safety" },
+    { "name": "release", "configurePreset": "release" }
+  ],
+  "testPresets": [
+    { "name": "native", "configurePreset": "native", "output": { "outputOnFailure": true } },
+    { "name": "safety", "configurePreset": "safety", "output": { "outputOnFailure": true } },
+    { "name": "release", "configurePreset": "release", "output": { "outputOnFailure": true } }
+  ]
+}

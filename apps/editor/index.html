@@ -1,0 +1,1113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PixelJS Studio — Sprite, Tilemap and Sound Editors</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">PIXEL<span>JS</span> STUDIO</div>
+      <div class="tabs" role="tablist" aria-label="Editors">
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="tab-sprite"
+          data-tab="sprite"
+          aria-controls="panel-sprite"
+          aria-selected="true"
+        >
+          Sprite &amp; Palette
+        </button>
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="tab-map"
+          data-tab="map"
+          aria-controls="panel-map"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Tilemap
+        </button>
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="tab-sound"
+          data-tab="sound"
+          aria-controls="panel-sound"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Sound
+        </button>
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="tab-music"
+          data-tab="music"
+          aria-controls="panel-music"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Music
+        </button>
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="tab-export"
+          data-tab="export"
+          aria-controls="panel-export"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Export
+        </button>
+      </div>
+      <div class="actions" role="group" aria-label="History">
+        <button class="btn" type="button" id="btn-undo" aria-keyshortcuts="Control+Z" disabled>
+          Undo
+        </button>
+        <button
+          class="btn"
+          type="button"
+          id="btn-redo"
+          aria-keyshortcuts="Control+Shift+Z Control+Y"
+          disabled
+        >
+          Redo
+        </button>
+      </div>
+      <div class="actions" role="group" aria-label="Project file">
+        <button class="btn" type="button" id="btn-project-new">New</button>
+        <button class="btn" type="button" id="btn-project-open" aria-keyshortcuts="Control+O">
+          Open…
+        </button>
+        <button class="btn" type="button" id="btn-project-save" aria-keyshortcuts="Control+S">
+          Save
+        </button>
+        <input
+          type="file"
+          id="file-project"
+          accept=".json,application/json"
+          aria-label="Project file to open"
+          hidden
+        />
+      </div>
+    </header>
+
+    <div class="confirm" id="confirm-bar" role="alertdialog" aria-labelledby="confirm-text" hidden>
+      <span id="confirm-text"></span>
+      <button class="btn primary" type="button" id="btn-confirm-yes">Discard changes</button>
+      <button class="btn" type="button" id="btn-confirm-no">Cancel</button>
+    </div>
+
+    <main>
+      <!-- Sprite & palette editor -->
+      <section class="panel" id="panel-sprite" role="tabpanel" aria-labelledby="tab-sprite">
+        <div class="sidebar">
+          <section class="group" aria-labelledby="h-sprites">
+            <h2 id="h-sprites">Sprites</h2>
+            <select id="sprite-list" size="4" aria-labelledby="h-sprites"></select>
+            <div class="row">
+              <button class="btn" type="button" id="btn-sprite-new">New</button>
+              <button class="btn" type="button" id="btn-sprite-duplicate">Duplicate</button>
+              <button class="btn" type="button" id="btn-sprite-delete">Delete</button>
+            </div>
+            <div class="field">
+              <label for="sprite-name">Name</label>
+              <input
+                id="sprite-name"
+                type="text"
+                maxlength="32"
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </div>
+            <div class="row bottom">
+              <div class="field">
+                <label for="sprite-width">Width</label>
+                <input id="sprite-width" type="number" min="1" max="256" />
+              </div>
+              <div class="field">
+                <label for="sprite-height">Height</label>
+                <input id="sprite-height" type="number" min="1" max="256" />
+              </div>
+              <button class="btn" type="button" id="btn-sprite-resize">Resize</button>
+            </div>
+            <div class="field">
+              <label for="sprite-transparent">Transparent color</label>
+              <select id="sprite-transparent"></select>
+            </div>
+            <div class="row">
+              <button class="btn" type="button" id="btn-import-png">Import PNG…</button>
+              <input
+                type="file"
+                id="file-png"
+                accept="image/png,.png"
+                aria-label="PNG file to import"
+                hidden
+              />
+            </div>
+            <div class="row">
+              <button class="btn" type="button" id="btn-export-png">Export PNG</button>
+              <button class="btn" type="button" id="btn-export-json">Export JSON</button>
+            </div>
+          </section>
+
+          <section class="group" aria-labelledby="h-tools">
+            <h2 id="h-tools">Tools</h2>
+            <div class="tool-grid" id="sprite-tools" role="toolbar" aria-labelledby="h-tools">
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="pen"
+                aria-pressed="true"
+                aria-keyshortcuts="P"
+                title="Pen (P)"
+              >
+                Pen
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="eraser"
+                aria-pressed="false"
+                aria-keyshortcuts="E"
+                title="Eraser (E): paints the transparent color"
+              >
+                Eraser
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="fill"
+                aria-pressed="false"
+                aria-keyshortcuts="F"
+                title="Fill (F): 4-connected area of one color"
+              >
+                Fill
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="line"
+                aria-pressed="false"
+                aria-keyshortcuts="L"
+                title="Line (L)"
+              >
+                Line
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="rect"
+                aria-pressed="false"
+                aria-keyshortcuts="R"
+                title="Rectangle outline (R)"
+              >
+                Rectangle
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="rect-fill"
+                aria-pressed="false"
+                aria-keyshortcuts="Shift+R"
+                title="Filled rectangle (Shift+R)"
+              >
+                Filled rect
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="eyedropper"
+                aria-pressed="false"
+                aria-keyshortcuts="I"
+                title="Eyedropper (I, or Alt+click with any tool)"
+              >
+                Eyedropper
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="select"
+                aria-pressed="false"
+                aria-keyshortcuts="S"
+                title="Select (S): drag to select, drag inside the selection to move it"
+              >
+                Select
+              </button>
+            </div>
+          </section>
+
+          <section class="group" aria-labelledby="h-selection">
+            <h2 id="h-selection">Selection</h2>
+            <div class="tool-grid">
+              <button class="btn" type="button" id="btn-select-all" aria-keyshortcuts="Control+A">
+                Select all
+              </button>
+              <button class="btn" type="button" id="btn-deselect" aria-keyshortcuts="Escape">
+                Deselect
+              </button>
+              <button class="btn" type="button" id="btn-copy" aria-keyshortcuts="Control+C">
+                Copy
+              </button>
+              <button class="btn" type="button" id="btn-cut" aria-keyshortcuts="Control+X">
+                Cut
+              </button>
+              <button class="btn" type="button" id="btn-paste" aria-keyshortcuts="Control+V">
+                Paste
+              </button>
+              <button
+                class="btn"
+                type="button"
+                id="btn-delete-selection"
+                aria-keyshortcuts="Delete"
+              >
+                Clear
+              </button>
+              <button
+                class="btn"
+                type="button"
+                id="btn-flip-h"
+                aria-keyshortcuts="H"
+                title="Flip the selection, or the whole sprite when nothing is selected (H)"
+              >
+                Flip H
+              </button>
+              <button
+                class="btn"
+                type="button"
+                id="btn-flip-v"
+                aria-keyshortcuts="V"
+                title="Flip the selection, or the whole sprite when nothing is selected (V)"
+              >
+                Flip V
+              </button>
+            </div>
+            <div class="nudge" role="group" aria-label="Move the selected pixels by one">
+              <button
+                class="btn"
+                type="button"
+                id="btn-nudge-left"
+                aria-label="Move selection left"
+                aria-keyshortcuts="Alt+ArrowLeft"
+              >
+                ←
+              </button>
+              <button
+                class="btn"
+                type="button"
+                id="btn-nudge-up"
+                aria-label="Move selection up"
+                aria-keyshortcuts="Alt+ArrowUp"
+              >
+                ↑
+              </button>
+              <button
+                class="btn"
+                type="button"
+                id="btn-nudge-down"
+                aria-label="Move selection down"
+                aria-keyshortcuts="Alt+ArrowDown"
+              >
+                ↓
+              </button>
+              <button
+                class="btn"
+                type="button"
+                id="btn-nudge-right"
+                aria-label="Move selection right"
+                aria-keyshortcuts="Alt+ArrowRight"
+              >
+                →
+              </button>
+            </div>
+          </section>
+
+          <section class="group" aria-labelledby="h-sprite-view">
+            <h2 id="h-sprite-view">View</h2>
+            <div class="row bottom">
+              <div class="field">
+                <label for="sprite-zoom">Zoom</label>
+                <select id="sprite-zoom" aria-keyshortcuts="+ -"></select>
+              </div>
+              <label class="check">
+                <input type="checkbox" id="sprite-grid" aria-keyshortcuts="G" checked />
+                Grid
+              </label>
+            </div>
+          </section>
+        </div>
+
+        <div class="work-area">
+          <div class="viewport" id="sprite-viewport">
+            <canvas
+              class="view-canvas"
+              id="sprite-canvas"
+              tabindex="0"
+              role="application"
+              aria-label="Sprite"
+              aria-describedby="sprite-help"
+            ></canvas>
+            <div class="sizer" id="sprite-sizer"></div>
+          </div>
+          <p class="hint" id="sprite-help">
+            Arrow keys move the cursor, Space or Enter applies the tool (line, rectangle and select
+            take two presses), Alt+arrows move the selected pixels.
+          </p>
+        </div>
+
+        <div class="inspector">
+          <section class="group" aria-labelledby="h-palette">
+            <h2 id="h-palette">Palette</h2>
+            <div
+              class="palette-grid"
+              id="palette-grid"
+              role="radiogroup"
+              aria-labelledby="h-palette"
+            ></div>
+            <div class="field">
+              <label for="palette-hex">Color <span id="palette-index">7</span> (hex)</label>
+              <div class="row">
+                <input
+                  id="palette-hex"
+                  type="text"
+                  maxlength="7"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <input id="palette-picker" type="color" aria-label="Choose the color visually" />
+                <button class="btn" type="button" id="btn-palette-apply">Set</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="palette-size">Number of colors (1–256)</label>
+              <div class="row">
+                <input id="palette-size" type="number" min="1" max="256" />
+                <button class="btn" type="button" id="btn-palette-size">Apply</button>
+              </div>
+            </div>
+            <p class="warning" id="palette-warning" hidden></p>
+          </section>
+          <section class="group" aria-labelledby="h-sprite-preview">
+            <h2 id="h-sprite-preview">Live preview</h2>
+            <div class="preview-host" id="sprite-preview-host"></div>
+            <div class="field">
+              <label for="sprite-preview-bg">Preview background</label>
+              <select id="sprite-preview-bg"></select>
+            </div>
+            <p class="hint">Rendered by a running PixelJS engine: 1:1, then tiled 2 × 2.</p>
+          </section>
+        </div>
+      </section>
+
+      <!-- Tile map editor -->
+      <section class="panel" id="panel-map" role="tabpanel" aria-labelledby="tab-map" hidden>
+        <div class="sidebar">
+          <section class="group" aria-labelledby="h-maps">
+            <h2 id="h-maps">Maps</h2>
+            <select id="map-list" size="4" aria-labelledby="h-maps"></select>
+            <div class="row">
+              <button class="btn" type="button" id="btn-map-new">New</button>
+              <button class="btn" type="button" id="btn-map-duplicate">Duplicate</button>
+              <button class="btn" type="button" id="btn-map-delete">Delete</button>
+            </div>
+            <div class="field">
+              <label for="map-name">Name</label>
+              <input
+                id="map-name"
+                type="text"
+                maxlength="32"
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </div>
+            <div class="row bottom">
+              <div class="field">
+                <label for="map-cols">Columns</label>
+                <input id="map-cols" type="number" min="1" max="256" />
+              </div>
+              <div class="field">
+                <label for="map-rows">Rows</label>
+                <input id="map-rows" type="number" min="1" max="256" />
+              </div>
+              <button class="btn" type="button" id="btn-map-resize">Resize</button>
+            </div>
+          </section>
+
+          <section class="group" aria-labelledby="h-tileset">
+            <h2 id="h-tileset">Tileset</h2>
+            <div class="field">
+              <label for="map-tileset">Sprite</label>
+              <select id="map-tileset"></select>
+            </div>
+            <div class="row bottom">
+              <div class="field">
+                <label for="map-tile-width">Tile width</label>
+                <input id="map-tile-width" type="number" min="1" max="256" />
+              </div>
+              <div class="field">
+                <label for="map-tile-height">Tile height</label>
+                <input id="map-tile-height" type="number" min="1" max="256" />
+              </div>
+              <button class="btn" type="button" id="btn-map-tileset">Apply</button>
+            </div>
+            <p class="hint" id="map-tileset-info"></p>
+          </section>
+
+          <section class="group" aria-labelledby="h-map-tools">
+            <h2 id="h-map-tools">Tools</h2>
+            <div class="tool-grid" id="map-tools" role="toolbar" aria-labelledby="h-map-tools">
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="place"
+                aria-pressed="true"
+                aria-keyshortcuts="P"
+                title="Place the selected tile (P)"
+              >
+                Place
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="erase"
+                aria-pressed="false"
+                aria-keyshortcuts="E"
+                title="Erase to an empty cell (E)"
+              >
+                Erase
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="rect"
+                aria-pressed="false"
+                aria-keyshortcuts="R"
+                title="Fill a rectangle with the selected tile (R)"
+              >
+                Fill rect
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="pick"
+                aria-pressed="false"
+                aria-keyshortcuts="I"
+                title="Pick the tile of a cell (I, or Alt+click)"
+              >
+                Pick
+              </button>
+            </div>
+          </section>
+
+          <section class="group" aria-labelledby="h-map-view">
+            <h2 id="h-map-view">View</h2>
+            <div class="row bottom">
+              <div class="field">
+                <label for="map-zoom">Zoom</label>
+                <select id="map-zoom" aria-keyshortcuts="+ -"></select>
+              </div>
+              <label class="check">
+                <input type="checkbox" id="map-grid" aria-keyshortcuts="G" checked />
+                Grid
+              </label>
+            </div>
+          </section>
+
+          <section class="group" aria-labelledby="h-map-export">
+            <h2 id="h-map-export">Export</h2>
+            <div class="row">
+              <button class="btn" type="button" id="btn-export-map">Map JSON</button>
+              <button class="btn" type="button" id="btn-export-tileset">Tileset PNG</button>
+            </div>
+          </section>
+        </div>
+
+        <div class="work-area">
+          <div class="viewport" id="map-viewport">
+            <canvas
+              class="view-canvas"
+              id="map-canvas"
+              tabindex="0"
+              role="application"
+              aria-label="Map"
+              aria-describedby="map-help"
+            ></canvas>
+            <div class="sizer" id="map-sizer"></div>
+          </div>
+          <p class="hint" id="map-help">
+            Arrow keys move the cell cursor, Space or Enter applies the tool (the rectangle takes
+            two presses). The dashed frame is the area the live preview shows.
+          </p>
+        </div>
+
+        <div class="inspector">
+          <section class="group" aria-labelledby="h-tiles">
+            <h2 id="h-tiles">Tiles</h2>
+            <div class="picker-host">
+              <canvas id="tile-picker" tabindex="0" role="application" aria-label="Tiles"></canvas>
+            </div>
+            <div class="field">
+              <label for="map-tile-id">Selected tile ID</label>
+              <input id="map-tile-id" type="number" min="0" />
+            </div>
+            <p class="hint" id="tile-info"></p>
+          </section>
+          <section class="group" aria-labelledby="h-map-preview">
+            <h2 id="h-map-preview">Live preview</h2>
+            <div class="preview-host" id="map-preview-host"></div>
+            <div class="field">
+              <label for="map-preview-bg">Preview background</label>
+              <select id="map-preview-bg"></select>
+            </div>
+            <p class="hint">
+              A 256 × 144 camera at the view's scroll position, drawn with createTilemap and
+              graphics.tilemap.
+            </p>
+          </section>
+        </div>
+      </section>
+
+      <!-- Sound editor -->
+      <section class="panel" id="panel-sound" role="tabpanel" aria-labelledby="tab-sound" hidden>
+        <div class="sidebar">
+          <section class="group" aria-labelledby="h-sounds">
+            <h2 id="h-sounds">Sounds</h2>
+            <select id="sound-list" size="4" aria-labelledby="h-sounds"></select>
+            <div class="row">
+              <button class="btn" type="button" id="btn-sound-new">New</button>
+              <button class="btn" type="button" id="btn-sound-duplicate">Duplicate</button>
+              <button class="btn" type="button" id="btn-sound-delete">Delete</button>
+            </div>
+            <div class="field">
+              <label for="sound-name">Name</label>
+              <input
+                id="sound-name"
+                type="text"
+                maxlength="32"
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </div>
+            <div class="field">
+              <label for="sound-mode">Type</label>
+              <select id="sound-mode">
+                <option value="note">Single note</option>
+                <option value="notes">Notes (a jingle)</option>
+              </select>
+            </div>
+          </section>
+          <section class="group" aria-labelledby="h-sound-instrument">
+            <h2 id="h-sound-instrument">Instrument</h2>
+            <div class="field">
+              <label for="sound-waveform">Waveform</label>
+              <select id="sound-waveform"></select>
+            </div>
+            <div class="grid2">
+              <div class="field">
+                <label for="sound-volume">Volume (0–1)</label>
+                <input id="sound-volume" type="number" min="0" max="1" step="0.05" />
+              </div>
+              <div class="field">
+                <label for="sound-attack">Attack (s)</label>
+                <input id="sound-attack" type="number" min="0" max="10" step="0.005" />
+              </div>
+              <div class="field">
+                <label for="sound-decay">Decay (s)</label>
+                <input id="sound-decay" type="number" min="0" max="10" step="0.005" />
+              </div>
+              <div class="field">
+                <label for="sound-sustain">Sustain (0–1)</label>
+                <input id="sound-sustain" type="number" min="0" max="1" step="0.05" />
+              </div>
+              <div class="field">
+                <label for="sound-release">Release (s)</label>
+                <input id="sound-release" type="number" min="0" max="10" step="0.005" />
+              </div>
+            </div>
+          </section>
+          <fieldset class="group plain" id="sound-single">
+            <legend>Single note</legend>
+            <div class="grid2">
+              <div class="field">
+                <label for="sound-frequency">Frequency (Hz)</label>
+                <input id="sound-frequency" type="number" min="0" max="24000" step="1" />
+              </div>
+              <div class="field">
+                <label for="sound-duration">Duration (s)</label>
+                <input id="sound-duration" type="number" min="0" max="60" step="0.01" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="sound-effect">Effect</label>
+              <select id="sound-effect"></select>
+            </div>
+            <div class="field">
+              <label for="sound-slide-to">Slide to (Hz)</label>
+              <input id="sound-slide-to" type="number" min="0" max="24000" step="1" />
+            </div>
+          </fieldset>
+          <fieldset class="group plain" id="sound-multi" hidden>
+            <legend>Tempo</legend>
+            <div class="grid2">
+              <div class="field">
+                <label for="sound-bpm">Beats per minute</label>
+                <input id="sound-bpm" type="number" min="20" max="400" step="1" />
+              </div>
+              <div class="field">
+                <label for="sound-steps-per-beat">Steps per beat</label>
+                <input id="sound-steps-per-beat" type="number" min="1" max="16" step="1" />
+              </div>
+            </div>
+          </fieldset>
+          <section class="group" aria-labelledby="h-sound-preview">
+            <h2 id="h-sound-preview">Preview</h2>
+            <div class="row">
+              <button class="btn primary" type="button" id="btn-sound-play" aria-keyshortcuts="P">
+                Play
+              </button>
+              <button class="btn" type="button" id="btn-sound-stop" aria-keyshortcuts="Escape">
+                Stop
+              </button>
+            </div>
+            <p class="hint"><span id="sound-audio-state">Audio: not started</span></p>
+            <p class="hint" id="sound-summary"></p>
+            <button class="btn" type="button" id="btn-export-sound">Export sound JSON</button>
+          </section>
+        </div>
+
+        <div class="work-area">
+          <div class="roll-area" id="sound-roll-area" hidden>
+            <div class="viewport" id="sound-roll-viewport">
+              <canvas
+                class="view-canvas"
+                id="sound-roll"
+                tabindex="0"
+                role="application"
+                aria-label="Notes of the sound: steps from left to right, pitches from bottom to top"
+                aria-describedby="sound-roll-help"
+              ></canvas>
+              <div class="sizer" id="sound-roll-sizer"></div>
+            </div>
+            <p class="hint" id="sound-roll-help">
+              Click an empty cell to add a note and drag to lengthen it; drag a note to move it or
+              its right end to resize it. Keys: arrows move the cursor, Space or Enter adds or
+              selects, Alt+arrows move and Shift+Left/Right resize the selected note, Delete removes
+              it.
+            </p>
+          </div>
+          <div class="empty-state" id="sound-single-help">
+            <p>
+              A single-note sound plays one tone: set its waveform, frequency, envelope and duration
+              on the left, and optionally slide it to another frequency, add vibrato or fade it out.
+              Choose <strong>Notes</strong> as its type to compose a short jingle of up to 64 notes
+              on a piano roll.
+            </p>
+          </div>
+        </div>
+
+        <div class="inspector" id="sound-note-panel" hidden>
+          <section class="group" aria-labelledby="h-sound-note">
+            <h2 id="h-sound-note">Selected note</h2>
+            <fieldset class="plain" id="sound-note-fields" disabled>
+              <div class="grid2">
+                <div class="field">
+                  <label for="sound-note-step">Step</label>
+                  <input id="sound-note-step" type="number" min="0" step="1" />
+                </div>
+                <div class="field">
+                  <label for="sound-note-length">Length (steps)</label>
+                  <input id="sound-note-length" type="number" min="1" max="4096" step="1" />
+                </div>
+                <div class="field">
+                  <label for="sound-note-pitch">Pitch (C4 or MIDI)</label>
+                  <input
+                    id="sound-note-pitch"
+                    type="text"
+                    maxlength="4"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                </div>
+                <div class="field">
+                  <label for="sound-note-volume">Volume (0–1)</label>
+                  <input id="sound-note-volume" type="number" min="0" max="1" step="0.05" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="sound-note-waveform">Waveform</label>
+                <select id="sound-note-waveform"></select>
+              </div>
+              <div class="field">
+                <label for="sound-note-effect">Effect</label>
+                <select id="sound-note-effect"></select>
+              </div>
+              <button
+                class="btn"
+                type="button"
+                id="btn-sound-note-delete"
+                aria-keyshortcuts="Delete"
+              >
+                Delete note
+              </button>
+            </fieldset>
+            <p class="hint">
+              Slide glides to the next note of the sound; vibrato wobbles by half a semitone;
+              fade-out fades over the note.
+            </p>
+          </section>
+          <section class="group" aria-labelledby="h-sound-view">
+            <h2 id="h-sound-view">View</h2>
+            <div class="row" id="sound-roll-tools" role="toolbar" aria-labelledby="h-sound-view">
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="draw"
+                aria-pressed="true"
+                aria-keyshortcuts="D"
+                title="Draw (D): add, move and resize notes"
+              >
+                Draw
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="erase"
+                aria-pressed="false"
+                aria-keyshortcuts="E"
+                title="Erase (E): remove notes"
+              >
+                Erase
+              </button>
+            </div>
+            <div class="grid2">
+              <div class="field">
+                <label for="sound-grouping">Grid lines every</label>
+                <select id="sound-grouping" aria-keyshortcuts="G">
+                  <option value="8" selected>8 steps</option>
+                  <option value="6">6 steps</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="sound-roll-zoom">Cell size</label>
+                <select id="sound-roll-zoom" aria-keyshortcuts="+ -"></select>
+              </div>
+            </div>
+            <p class="hint">Grid lines are only a view: they never change the notes.</p>
+          </section>
+        </div>
+      </section>
+
+      <!-- Music editor -->
+      <section class="panel" id="panel-music" role="tabpanel" aria-labelledby="tab-music" hidden>
+        <div class="sidebar">
+          <section class="group" aria-labelledby="h-music">
+            <h2 id="h-music">Music</h2>
+            <select id="music-list" size="4" aria-labelledby="h-music"></select>
+            <div class="row">
+              <button class="btn" type="button" id="btn-music-new">New</button>
+              <button class="btn" type="button" id="btn-music-duplicate">Duplicate</button>
+              <button class="btn" type="button" id="btn-music-delete">Delete</button>
+            </div>
+            <div class="field">
+              <label for="music-name">Name</label>
+              <input
+                id="music-name"
+                type="text"
+                maxlength="32"
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </div>
+          </section>
+          <section class="group" aria-labelledby="h-piece">
+            <h2 id="h-piece">Piece</h2>
+            <div class="grid2">
+              <div class="field">
+                <label for="music-bpm">Beats per minute</label>
+                <input id="music-bpm" type="number" min="20" max="400" step="1" />
+              </div>
+              <div class="field">
+                <label for="music-steps-per-beat">Steps per beat</label>
+                <input id="music-steps-per-beat" type="number" min="1" max="16" step="1" />
+              </div>
+              <div class="field">
+                <label for="music-length">Length (steps)</label>
+                <input id="music-length" type="number" min="1" max="4096" step="1" />
+              </div>
+            </div>
+            <label class="check"><input type="checkbox" id="music-loop" /> Loop</label>
+            <p class="hint" id="music-summary"></p>
+          </section>
+          <section class="group" aria-labelledby="h-tracks">
+            <h2 id="h-tracks">Tracks</h2>
+            <select id="music-track-list" size="4" aria-labelledby="h-tracks"></select>
+            <div class="row">
+              <button class="btn" type="button" id="btn-track-add">Add track</button>
+              <button class="btn" type="button" id="btn-track-remove">Remove track</button>
+            </div>
+            <div class="field">
+              <label for="track-voice">Voice</label>
+              <select id="track-voice"></select>
+            </div>
+            <div class="field">
+              <label for="track-waveform">Waveform</label>
+              <select id="track-waveform"></select>
+            </div>
+            <div class="grid2">
+              <div class="field">
+                <label for="track-volume">Volume (0–1)</label>
+                <input id="track-volume" type="number" min="0" max="1" step="0.05" />
+              </div>
+              <div class="field">
+                <label for="track-attack">Attack (s)</label>
+                <input id="track-attack" type="number" min="0" max="10" step="0.005" />
+              </div>
+              <div class="field">
+                <label for="track-decay">Decay (s)</label>
+                <input id="track-decay" type="number" min="0" max="10" step="0.005" />
+              </div>
+              <div class="field">
+                <label for="track-sustain">Sustain (0–1)</label>
+                <input id="track-sustain" type="number" min="0" max="1" step="0.05" />
+              </div>
+              <div class="field">
+                <label for="track-release">Release (s)</label>
+                <input id="track-release" type="number" min="0" max="10" step="0.005" />
+              </div>
+            </div>
+            <div class="row">
+              <label class="check"><input type="checkbox" id="track-mute" /> Mute</label>
+              <label class="check"><input type="checkbox" id="track-solo" /> Solo</label>
+            </div>
+            <p class="hint">Mute and solo change only the preview, never the saved music.</p>
+          </section>
+          <section class="group" aria-labelledby="h-music-preview">
+            <h2 id="h-music-preview">Preview</h2>
+            <div class="row">
+              <button class="btn primary" type="button" id="btn-music-play" aria-keyshortcuts="P">
+                Play
+              </button>
+              <button class="btn" type="button" id="btn-music-stop" aria-keyshortcuts="Escape">
+                Stop
+              </button>
+            </div>
+            <p class="hint"><span id="music-transport" data-playing="false">Stopped</span></p>
+            <p class="hint"><span id="music-audio-state">Audio: not started</span></p>
+            <button class="btn" type="button" id="btn-export-music">Export music JSON</button>
+          </section>
+        </div>
+
+        <div class="work-area">
+          <div class="roll-area">
+            <div class="viewport" id="music-roll-viewport">
+              <canvas
+                class="view-canvas"
+                id="music-roll"
+                tabindex="0"
+                role="application"
+                aria-label="Notes of the selected track: steps from left to right, pitches from bottom to top"
+                aria-describedby="music-roll-help"
+              ></canvas>
+              <div class="sizer" id="music-roll-sizer"></div>
+            </div>
+            <p class="hint" id="music-roll-help">
+              Click an empty cell to add a note and drag to lengthen it; drag a note to move it or
+              its right end to resize it. Keys: arrows move the cursor, Space or Enter adds or
+              selects, Alt+arrows move and Shift+Left/Right resize the selected note, Delete removes
+              it. Other tracks show in blue; the playhead position is approximate.
+            </p>
+          </div>
+        </div>
+
+        <div class="inspector">
+          <section class="group" aria-labelledby="h-music-note">
+            <h2 id="h-music-note">Selected note</h2>
+            <fieldset class="plain" id="music-note-fields" disabled>
+              <div class="grid2">
+                <div class="field">
+                  <label for="music-note-step">Step</label>
+                  <input id="music-note-step" type="number" min="0" step="1" />
+                </div>
+                <div class="field">
+                  <label for="music-note-length">Length (steps)</label>
+                  <input id="music-note-length" type="number" min="1" max="4096" step="1" />
+                </div>
+                <div class="field">
+                  <label for="music-note-pitch">Pitch (C4 or MIDI)</label>
+                  <input
+                    id="music-note-pitch"
+                    type="text"
+                    maxlength="4"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                </div>
+                <div class="field">
+                  <label for="music-note-volume">Volume (0–1)</label>
+                  <input id="music-note-volume" type="number" min="0" max="1" step="0.05" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="music-note-waveform">Waveform</label>
+                <select id="music-note-waveform"></select>
+              </div>
+              <div class="field">
+                <label for="music-note-effect">Effect</label>
+                <select id="music-note-effect"></select>
+              </div>
+              <button
+                class="btn"
+                type="button"
+                id="btn-music-note-delete"
+                aria-keyshortcuts="Delete"
+              >
+                Delete note
+              </button>
+            </fieldset>
+            <p class="hint">
+              Slide glides to the next note of the track; vibrato wobbles by half a semitone;
+              fade-out fades over the note.
+            </p>
+          </section>
+          <section class="group" aria-labelledby="h-music-view">
+            <h2 id="h-music-view">View</h2>
+            <div class="row" id="music-roll-tools" role="toolbar" aria-labelledby="h-music-view">
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="draw"
+                aria-pressed="true"
+                aria-keyshortcuts="D"
+                title="Draw (D): add, move and resize notes"
+              >
+                Draw
+              </button>
+              <button
+                class="btn tool"
+                type="button"
+                data-tool="erase"
+                aria-pressed="false"
+                aria-keyshortcuts="E"
+                title="Erase (E): remove notes"
+              >
+                Erase
+              </button>
+            </div>
+            <div class="grid2">
+              <div class="field">
+                <label for="music-grouping">Grid lines every</label>
+                <select id="music-grouping" aria-keyshortcuts="G">
+                  <option value="8" selected>8 steps</option>
+                  <option value="6">6 steps</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="music-roll-zoom">Cell size</label>
+                <select id="music-roll-zoom" aria-keyshortcuts="+ -"></select>
+              </div>
+            </div>
+            <p class="hint">Grid lines are only a view: they never change the notes.</p>
+          </section>
+        </div>
+      </section>
+
+      <!-- Web asset export -->
+      <section class="panel" id="panel-export" role="tabpanel" aria-labelledby="tab-export" hidden>
+        <div class="export-page">
+          <h2>Export web assets</h2>
+          <p>
+            Download each file and keep this layout next to your game: <code>assets.json</code> and
+            <code>palette.json</code> at the top, the PNGs in <code>images/</code> and the map files
+            in <code>maps/</code>. Games load them with the public PixelJS API
+            (<code>loadImage</code>, <code>loadTilemap</code>).
+          </p>
+          <div class="table-scroll">
+            <table class="export-table">
+              <thead>
+                <tr>
+                  <th scope="col">File</th>
+                  <th scope="col">Contents</th>
+                  <th scope="col">Download</th>
+                </tr>
+              </thead>
+              <tbody id="export-files"></tbody>
+            </table>
+          </div>
+          <p class="warning" id="export-warning" hidden></p>
+          <h3>Loading them in a game</h3>
+          <pre class="code"><code id="export-code"></code></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer class="statusbar">
+      <span id="status" role="status" aria-live="polite"></span>
+      <span id="cursor-status"></span>
+      <span id="history-status"></span>
+    </footer>
+
+    <dialog id="import-dialog" aria-labelledby="import-title">
+      <h2 id="import-title">Import PNG</h2>
+      <p id="import-source"></p>
+      <fieldset class="region">
+        <legend>Region to import</legend>
+        <div class="field">
+          <label for="import-x">X</label>
+          <input id="import-x" type="number" min="0" />
+        </div>
+        <div class="field">
+          <label for="import-y">Y</label>
+          <input id="import-y" type="number" min="0" />
+        </div>
+        <div class="field">
+          <label for="import-width">Width</label>
+          <input id="import-width" type="number" min="1" max="256" />
+        </div>
+        <div class="field">
+          <label for="import-height">Height</label>
+          <input id="import-height" type="number" min="1" max="256" />
+        </div>
+      </fieldset>
+      <div class="field">
+        <label for="import-transparent">Transparent color</label>
+        <select id="import-transparent"></select>
+      </div>
+      <p class="import-summary" id="import-summary"></p>
+      <div class="import-previews">
+        <figure>
+          <canvas id="import-original" role="img" aria-label="Region of the PNG"></canvas>
+          <figcaption>PNG</figcaption>
+        </figure>
+        <figure>
+          <canvas id="import-result" role="img" aria-label="Region mapped to the palette"></canvas>
+          <figcaption>Palette result</figcaption>
+        </figure>
+      </div>
+      <label class="check">
+        <input type="checkbox" id="import-highlight" checked />
+        Tint changed pixels magenta
+      </label>
+      <p class="hint">
+        Each pixel takes the palette color nearest in RGB (lowest index on ties); alpha below 128
+        becomes the transparent color. The PNG file itself is not modified.
+      </p>
+      <div class="row">
+        <button class="btn primary" type="button" id="btn-import-add">Add as new sprite</button>
+        <button class="btn" type="button" id="btn-import-replace">Replace current sprite</button>
+        <button class="btn" type="button" id="btn-import-cancel">Cancel</button>
+      </div>
+    </dialog>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

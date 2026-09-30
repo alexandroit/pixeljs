@@ -1,0 +1,84 @@
+name: Set up the PixelJS toolchain
+description: >-
+  Installs the pinned Node.js, npm, Clang, CMake, Ninja and optionally Emscripten,
+  locked npm dependencies and Playwright browsers. Shared by CI and release so
+  both verify with the same tools.
+inputs:
+  emscripten:
+    description: Install the pinned Emscripten SDK (needed to build the WASM artifacts).
+    default: 'true'
+  dependencies:
+    description: Install the locked npm dependencies without lifecycle scripts.
+    default: 'true'
+  browsers:
+    description: Install Chromium, Firefox and WebKit for Playwright.
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - name: Install exact project Node.js
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version: '24.20.0'
+        package-manager-cache: false
+    - name: Install Linux native toolchain and pinned build tools
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y clang-18 libclang-rt-18-dev python3-venv
+        python3 -m venv "$RUNNER_TEMP/pixeljs-tools"
+        "$RUNNER_TEMP/pixeljs-tools/bin/python" -m pip install --only-binary=:all: cmake==4.4.3 ninja==1.13.0
+        echo "$RUNNER_TEMP/pixeljs-tools/bin" >> "$GITHUB_PATH"
+        npm install --global npm@12.0.2 --ignore-scripts --no-audit --no-fund
+    - name: Install the exact Emscripten SDK revision
+      if: inputs.emscripten == 'true'
+      shell: bash
+      env:
+        EMSDK_COMMIT: e566f7bdcc7735f44037911c24b87a58a3c93145
+      run: |
+        git init "$RUNNER_TEMP/pixeljs-emsdk"
+        git -C "$RUNNER_TEMP/pixeljs-emsdk" remote add origin https://github.com/emscripten-core/emsdk.git
+        git -C "$RUNNER_TEMP/pixeljs-emsdk" fetch --depth=1 origin "$EMSDK_COMMIT"
+        git -C "$RUNNER_TEMP/pixeljs-emsdk" checkout --detach FETCH_HEAD
+        test "$(git -C "$RUNNER_TEMP/pixeljs-emsdk" rev-parse HEAD)" = "$EMSDK_COMMIT"
+        "$RUNNER_TEMP/pixeljs-emsdk/emsdk" install 6.0.10
+        "$RUNNER_TEMP/pixeljs-emsdk/emsdk" activate 6.0.10
+        echo "$RUNNER_TEMP/pixeljs-emsdk/upstream/emscripten" >> "$GITHUB_PATH"
+        echo "EMSDK=$RUNNER_TEMP/pixeljs-emsdk" >> "$GITHUB_ENV"
+        echo "EM_CONFIG=$RUNNER_TEMP/pixeljs-emsdk/.emscripten" >> "$GITHUB_ENV"
+    - name: Install locked dependencies without lifecycle scripts
+      if: inputs.dependencies == 'true'
+      shell: bash
+      run: npm ci --ignore-scripts --no-audit --no-fund
+    - name: Install all three test browsers and Linux dependencies
+      if: inputs.browsers == 'true'
+      shell: bash
+      run: npx --no-install playwright install --with-deps chromium firefox webkit
+    - name: Provide a silent audio device for the browser audio tests
+      if: inputs.browsers == 'true'
+      shell: bash
+      run: |
+        # Hosted runners have no sound card; without an audio server Firefox
+        # never starts an AudioContext. A null sink keeps the real path.
+        sudo apt-get install --no-install-recommends -y pulseaudio
+        pulseaudio --daemonize=yes --exit-idle-time=-1
+        pactl load-module module-null-sink sink_name=pixeljs_null
+        pactl set-default-sink pixeljs_null
+        pactl info | grep -i 'default sink'
+    - name: Capture the actual runner and toolchain versions
+      shell: bash
+      run: |
+        mkdir -p artifacts/ci
+        {
+          uname -a
+          cat /etc/os-release
+          git rev-parse HEAD
+          node --version
+          npm --version
+          clang-18 --version
+          cmake --version
+          ninja --version
+          if command -v emcc >/dev/null; then emcc --version; fi
+        } | tee artifacts/ci/toolchain.txt
+        test "$(node --version)" = v24.20.0
+        test "$(npm --version)" = 12.0.2

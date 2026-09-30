@@ -1,0 +1,50 @@
+{
+  "name": "pixeljs-workspace",
+  "version": "0.0.3",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexandroit/pixeljs.git"
+  },
+  "type": "module",
+  "workspaces": [
+    "packages/core",
+    "packages/create",
+    "apps/mobile-smoke"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "npm@12.0.2",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "build:ts": "tsc -p tsconfig.json",
+    "build:wasm": "node tools/build-wasm.mjs",
+    "build:site": "node tools/build-site.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:c": "node tools/test-c.mjs",
+    "test:wasm": "node --test tests/wasm.test.mjs",
+    "test:browser": "playwright test",
+    "test:game": "node tools/test-game.mjs",
+    "test:package": "node tools/test-package.mjs",
+    "test:contracts": "node --test tests/wasm.test.mjs tests/host.test.mjs",
+    "test:docs": "node tools/test-docs.mjs",
+    "test:mobile:android": "node tools/test-mobile-android.mjs",
+    "lint": "tsc -p tsconfig.json --noEmit && node tools/lint.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify:generated": "node tools/generate-protocol.mjs --check && node tools/generate-trig.mjs --check && node tools/generate-pacman-assets.mjs --check",
+    "check:release": "node tools/check-release.mjs",
+    "bench": "node tools/bench.mjs",
+    "bench:browser": "node tools/bench-browser.mjs",
+    "verify": "npm run verify:generated && npm run check:release && npm run format:check && npm run lint && npm run build && npm run build:site && npm run test:c && npm test && npm run test:package && npm run test:docs && npm run test:browser && npm run test:game"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.19.0",
+    "prettier": "3.9.9",
+    "typescript": "7.0.2",
+    "vite": "8.3.1"
+  }
+}

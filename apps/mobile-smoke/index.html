@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>PixelJS Mobile Smoke</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header>
+      <span>PIXELJS MOBILE SMOKE</span>
+      <span id="stat-renderer">AUTO</span>
+      <span id="stat-mem">— KiB</span>
+    </header>
+
+    <main class="layout">
+      <!-- The engine sizes the canvas to this box ('integer' scaling). -->
+      <div class="screen">
+        <canvas id="screen" width="224" height="256" tabindex="0"></canvas>
+      </div>
+
+      <div class="side">
+        <div class="hud">
+          <span id="status-label">READY</span>
+          <span>·</span>
+          <span id="stat-frames">0 frames</span>
+        </div>
+        <div class="dpad" role="group" aria-label="Directional controls">
+          <button class="up" data-dir="up" aria-label="Up">↑</button>
+          <button class="left" data-dir="left" aria-label="Left">←</button>
+          <div class="center"></div>
+          <button class="right" data-dir="right" aria-label="Right">→</button>
+          <button class="down" data-dir="down" aria-label="Down">↓</button>
+        </div>
+        <div class="action-buttons">
+          <button id="btn-audio" type="button">Sound: Off</button>
+          <button id="btn-pause" type="button">Pause</button>
+          <button id="btn-recreate" type="button">Recreate Engine</button>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
