@@ -1,6 +1,6 @@
 # PixelJS API reference
 
-This is the complete public API of `@pixeljs/core`. Everything is exported from the package root; TypeScript declarations are included and every argument is also validated at runtime, so plain JavaScript gets the same errors. Types named here are exported (`import type { Engine, SpriteOptions } from '@pixeljs/core'`). New to PixelJS? Start with the [tutorial](tutorial.md).
+This is the complete public API of `@pixeljs/core`. Everything is exported from the package root, except the [portal](#portal) module, `@pixeljs/core/portal`; TypeScript declarations are included and every argument is also validated at runtime, so plain JavaScript gets the same errors. Types named here are exported (`import type { Engine, SpriteOptions } from '@pixeljs/core'`). New to PixelJS? Start with the [tutorial](tutorial.md).
 
 - [Creating an engine](#creating-an-engine)
 - [The game loop](#the-game-loop)
@@ -11,6 +11,7 @@ This is the complete public API of `@pixeljs/core`. Everything is exported from 
 - [Audio](#audio)
 - [Palette](#palette)
 - [Capture](#capture)
+- [Portal](#portal)
 - [Errors](#errors)
 - [Limits](#limits)
 
@@ -217,6 +218,58 @@ engine.startRecording({ maxSeconds: 5 });
 // … later, for example from a key press:
 const gif = await engine.stopRecording();
 ```
+
+## Portal
+
+`@pixeljs/core/portal` connects a game to the PixelJS portal at pixeljs.com: levels and runs, leaderboards, achievements, cloud saves, online play and the portal's pause, resume and mute controls. It is a separate entry point without dependencies, so games that do not import it do not load it, and it can be imported in Node. [Publish on PixelJS](portal.md) explains `pixeljs.json` and the whole workflow.
+
+```js
+import { attachEngine, connectPortal, createRandom } from '@pixeljs/core/portal';
+```
+
+| Export                                                  | Notes                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `connectPortal(options?): Promise<Portal>`              | Options: `timeoutMs` (default 3000), `capabilities` (those `pixeljs.json` declares; without them the portal grants every reviewed one) and `engine` (for example `'@pixeljs/core@0.0.4'`). In the portal's frame it resolves once the portal answers, or after `timeoutMs`; anywhere else at once. |
+| `attachEngine(portal, engine, { volume? }): () => void` | The portal's `pause` and `resume` pause and resume the engine, and `mute` sets its volume to 0 or back to `volume` (0–1, default 1). Call it after `engine.start()`, which ends a pause. Returns a function that detaches the engine.                                                              |
+| `createRandom(seed): Random`                            | A deterministic generator (mulberry32) for the seed of an online match and for replays: any safe integer seed (taken modulo 2³²) gives the same numbers in every browser. Not cryptographic.                                                                                                       |
+| `BRIDGE_VERSION`                                        | `'2.0.0'`, the version of the portal protocol that `connectPortal` speaks.                                                                                                                                                                                                                         |
+
+**The portal.** Outside the portal every method still answers: `inPortal` is false, `levelEnd` and `gameOver` answer `{ recorded: false, reason: 'not_in_portal' }`, `levels()` answers `{}`, `player()` answers `{ signedIn: false }`, saves stay in memory until the page closes and online requests answer `{ ok: false, reason: 'not_in_portal' }`. A request the portal does not answer within 15 seconds resolves as unavailable.
+
+| `Portal` member                                                                     | Notes                                                                                                                                                                                                                                                                                                     |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `inPortal`, `capabilities`, `launch`                                                | Whether the game runs in the portal, the capabilities it granted, and the play mode the player chose: `{ mode: 'solo' \| 'local' \| 'online', players?, room? }` (`{ mode: 'solo' }` outside the portal).                                                                                                 |
+| `on(event, handler): () => void`                                                    | `pause`, `resume`, `mute` (`{ muted }`), `visibility` (`{ visible, focused }`), `viewport` (`{ width, height, dpr, mode }`), `select` (`{ level }`, with `level-select`) and `player` (`{ signedIn, handle? }`). Returns a function that stops listening. A handler that throws does not stop the others. |
+| `loading(loaded, total)`, `ready()`, `error(message)`, `state({ paused?, muted? })` | The portal's loading bar; the game accepts input; the game cannot run (at most 200 characters); a pause or mute the game decided itself.                                                                                                                                                                  |
+| `levelStart(level?): Promise<string>`                                               | Starts a run of a declared level (`"main"` without one) and resolves with its id. A run still open is first ended as `"quit"`.                                                                                                                                                                            |
+| `levelEnd(run, result): Promise<LevelEndResult>`                                    | `result` is a `LevelResult`: `{ outcome: 'complete' \| 'fail' \| 'quit', scores?, timeMs?, stars?, stats?, replay? }`. Answers `{ recorded, reason?, newBest?, best?, rank?, unlocked?, held? }`.                                                                                                         |
+| `gameOver(result?): Promise<LevelEndResult>`                                        | Ends the current run as `"fail"` with `{ scores?, timeMs?, stats?, replay? }`, for endless games.                                                                                                                                                                                                         |
+| `levels(): Promise<Record<string, LevelProgress>>`                                  | The player's progress by level id: `{ completed, stars?, best?, bestTimeMs?, attempts? }`.                                                                                                                                                                                                                |
+| `unlock(id): Promise<UnlockResult>`                                                 | Unlocks an achievement without a rule: `{ unlocked, reason? }` (`reason` `'already'` the second time).                                                                                                                                                                                                    |
+| `save(slot, data, { rev? }): Promise<SaveResult>`                                   | Saves a string: `{ ok: true, rev }`, or `{ ok: false, reason }` such as `'conflict'` (a newer save than `rev` exists), `'rate_limited'` or `'too_large'`.                                                                                                                                                 |
+| `load(slot): Promise<LoadResult>`                                                   | `{ data, rev, schema, reason? }`; `data` is `null` for an empty slot.                                                                                                                                                                                                                                     |
+| `player(): Promise<PlayerInfo>`                                                     | `{ signedIn, handle? }`: everything a game learns about the player.                                                                                                                                                                                                                                       |
+| `multiplayer`                                                                       | Online play, below.                                                                                                                                                                                                                                                                                       |
+
+**Online play.** `portal.multiplayer` needs the `multiplayer` capability. A `Room` is `{ code, mode, private, state: 'lobby' | 'playing' | 'ended', host, me, min, max, players }`, where `host` and `me` are slots and each player is `{ slot, handle, avatar, ready, connected }`.
+
+| `portal.multiplayer` member                        | Notes                                                                                                                                                                                                                                    |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `available`                                        | True in the portal with the `multiplayer` capability granted.                                                                                                                                                                            |
+| `find({ mode? })`, `host({ mode? })`, `join(code)` | Quick match, a new private room, or a private room by its code. Answer `{ ok: true, room? }` or `{ ok: false, reason }` (such as `'guest'` for players who are not signed in, or `'room_not_found'`).                                    |
+| `start()`, `result(placements)`                    | The host starts the match, and reports the final placements (slots, best first). Answer `{ ok: true }` or `{ ok: false, reason }`.                                                                                                       |
+| `ready(ready?)`, `send(data, { to? })`, `leave()`  | Marks the player ready in the room; sends any JSON value to every other player or to slot `to`; leaves the room or the queue. No answer.                                                                                                 |
+| `on(event, handler): () => void`                   | `room` (a `Room`, also when the host changes), `start` (a `MatchStart`: the room and its 32-bit `seed`, the same for every player), `message` (`{ from, data }`: check `data` before use), `left` (`{ slot }`) and `end` (`{ reason }`). |
+
+| `Random` member                                 | Notes                                                                                                                       |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `next()`                                        | The next unsigned 32-bit integer.                                                                                           |
+| `int(maxExclusive)`, `range(min, maxInclusive)` | An integer from 0 to `maxExclusive - 1` (`maxExclusive` 1 to 2³²), or from `min` to `maxInclusive`.                         |
+| `float()`                                       | A number from 0 (included) to 1 (excluded).                                                                                 |
+| `pick(array)`, `shuffle(array)`                 | One item of a non-empty array; shuffles an array in place (Fisher–Yates) and returns it.                                    |
+| `state()`, `fork()`                             | The 32-bit state (`createRandom(random.state())` continues the same sequence); a new generator seeded from the next number. |
+
+`attachEngine`, `createRandom`, `int`, `range` and `pick` throw `RANGE` for values outside their range, and `shuffle` throws `ARGUMENT` for anything but an array. The other exported types are `Portal`, `PortalOptions`, `PortalEvents`, `PortalCapability`, `PortalState`, `Launch`, `PlayMode`, `LevelResult`, `LevelOutcome`, `LevelEndResult`, `GameOverResult`, `LevelProgress`, `UnlockResult`, `SaveResult`, `LoadResult`, `PlayerInfo`, `Multiplayer`, `MultiplayerEvents`, `MultiplayerResult`, `RoomResult`, `Room`, `RoomPlayer`, `RoomState`, `MatchStart`, `MatchMessage`, `PlayerLeft`, `MatchEnd`, `NoData`, `Random` and `AttachEngineOptions`.
 
 ## Errors
 

@@ -1,6 +1,6 @@
 # Security status
 
-Security fixes go into the latest published version of `@pixeljs/core` and `@pixeljs/create` (currently 0.0.3). Report vulnerabilities privately through GitHub's private vulnerability reporting: [github.com/alexandroit/pixeljs/security](https://github.com/alexandroit/pixeljs/security) → **Report a vulnerability**. Do not publish exploit details in a public issue.
+Security fixes go into the latest published version of `@pixeljs/core` and `@pixeljs/create` (currently 0.0.4). Report vulnerabilities privately through GitHub's private vulnerability reporting: [github.com/alexandroit/pixeljs/security](https://github.com/alexandroit/pixeljs/security) → **Report a vulnerability**. Do not publish exploit details in a public issue.
 
 The C core validates bounds, sizes, budgets, protocol records and generational resources, and rejects invalid batches atomically. The SDK validates JavaScript input and engine ownership, and bounds every asset download. Tests, sanitizers and fuzzing provide evidence for the covered cases, not proof that the engine is free of memory errors; the [architecture guide](docs/architecture.md#security-model) describes the security model.
 

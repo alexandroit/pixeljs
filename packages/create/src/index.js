@@ -2,11 +2,21 @@ import { mkdir, readdir, readFile, writeFile, lstat } from 'node:fs/promises';
 import { resolve, basename, join, relative, sep, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/** The starters, each with a one-line description. */
+export const TEMPLATES = Object.freeze({
+  typescript: 'A small platformer in strict TypeScript',
+  javascript: 'The same platformer in JavaScript',
+  portal: 'A game for the PixelJS portal: levels, leaderboards, stars, achievements and saves',
+  board: 'A two-player board game for the PixelJS portal: solo, local and online play',
+});
+
 const SUPPORTED_TEMPLATES = {
   ts: 'typescript',
   typescript: 'typescript',
   js: 'javascript',
   javascript: 'javascript',
+  portal: 'portal',
+  board: 'board',
 };
 
 // npm strips files named .gitignore from published packages, so templates
@@ -78,10 +88,11 @@ export async function validateDestination(targetDir, force = false) {
  * Normalizes template alias to canonical template name.
  */
 export function normalizeTemplate(template) {
-  const normalized = SUPPORTED_TEMPLATES[String(template || '').toLowerCase()];
+  const key = String(template || '').toLowerCase();
+  const normalized = Object.hasOwn(SUPPORTED_TEMPLATES, key) ? SUPPORTED_TEMPLATES[key] : '';
   if (!normalized) {
     throw new Error(
-      `Invalid template: "${template}". Available templates: typescript, javascript.`,
+      `Invalid template: "${template}". Available templates: ${Object.keys(TEMPLATES).join(', ')}.`,
     );
   }
   return normalized;

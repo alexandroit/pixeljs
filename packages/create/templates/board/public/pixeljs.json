@@ -1,0 +1,23 @@
+{
+  "manifest_version": 2,
+  "min_age": 0,
+  "width": 320,
+  "height": 180,
+  "scale_mode": "integer",
+  "orientation": "landscape",
+  "inputs": ["keyboard", "mouse", "touch", "gamepad"],
+  "controls_md": "- Arrows and Enter, or a tap: play a square\n- Escape: back to the menu",
+  "capabilities": ["pause", "mute", "multiplayer"],
+  "play_modes": ["solo", "local", "online"],
+  "local_players": 2,
+  "multiplayer": {
+    "min_players": 2,
+    "max_players": 2,
+    "modes": [{ "id": "versus", "name": "Versus" }],
+    "quick_match": true,
+    "private_rooms": true,
+    "join_in_progress": false,
+    "max_message_bytes": 1024,
+    "max_messages_per_second": 10
+  }
+}

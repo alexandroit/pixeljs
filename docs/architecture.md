@@ -18,6 +18,7 @@ This guide explains how PixelJS is built: where each responsibility lives, how a
 | WebAssembly bridges     | [`bridge/wasm/`](../bridge/wasm), [`bridge/audio/`](../bridge/audio)                               | Scalar-only exports around one core context (visual) or one DSP (audio) per instance                          |
 | SDK internals           | [`packages/core/src/internal/`](../packages/core/src/internal)                                     | WASM loader, heap views, command encoder, resource uploads, audio controller, asset loaders, capture encoders |
 | Public API and web host | [`packages/core/src/api/`](../packages/core/src/api), [`host/web/`](../packages/core/src/host/web) | Validation, lifecycle and timing, input, display scaling, WebGL2 and Canvas2D presentation                    |
+| Portal bridge           | [`packages/core/src/portal/`](../packages/core/src/portal)                                         | `@pixeljs/core/portal`, a separate entry point: messages to the PixelJS portal, and the seeded generator      |
 | Tools                   | [`packages/create/`](../packages/create), [`apps/editor/`](../apps/editor)                         | The project generator and PixelJS Studio; both use only the public API                                        |
 
 The C core knows nothing about browsers, WebGL, Emscripten or npm, and never calls back into JavaScript. The same sources compile natively (for tests, sanitizers and fuzzing) and to WebAssembly.
@@ -123,6 +124,7 @@ Assets, parameters and file contents are untrusted input, even though the game's
 - An unexpected WebAssembly trap makes the engine unusable: the SDK never calls into a module that may be in an inconsistent state.
 - Loaders, manifests, fonts and the audio transport are all bounded in bytes, entries or messages.
 - The project generator never writes through symbolic links and runs no shell commands.
+- The portal bridge accepts only messages from its parent window that carry its frame's nonce, and checks their shape before using them; it posts nothing outside a portal frame.
 
 WebAssembly isolates the core's memory from the page, not C objects from each other, so the C code follows strict rules: checked arithmetic, no variable-length arrays or recursion, no unbounded string functions, and bounds checks that stay on in release builds.
 

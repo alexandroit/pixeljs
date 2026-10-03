@@ -45,21 +45,21 @@ The scripts find `cmake`, `ctest`, `emcmake` and the C compiler on `PATH`; set `
 
 ## Commands
 
-| Command                    | What it does                                                                                                                |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `npm run verify`           | Everything below, in order. Run it before opening a pull request                                                            |
-| `npm run build`            | Compile the SDK, copy the audio worklet and build both WebAssembly binaries                                                 |
-| `npm run build:site`       | Build the website, the examples, the editor and the mobile app, and pack both npm tarballs                                  |
-| `npm run test:c`           | Native C tests, with warnings as errors, in a normal build and under AddressSanitizer and UndefinedBehaviorSanitizer        |
-| `npm test`                 | Node tests against the real WebAssembly: the ABI, rasterization, audio, the SDK, the generator, the editor and the examples |
-| `npm run test:browser`     | Playwright tests in Chromium, Firefox and WebKit, served with the production Content-Security-Policy                        |
-| `npm run test:package`     | Install the packed tarballs in fresh projects, build JavaScript and TypeScript consumers and generated starters, run them   |
-| `npm run test:docs`        | Check that the site's source panels match the examples, typecheck the examples and check every Markdown link                |
-| `npm run test:game`        | Play the built site's Pac-Man in three browsers                                                                             |
-| `npm run lint`             | Strict TypeScript checks and source policy checks (C warnings are enforced by CMake)                                        |
-| `npm run format`           | Format with Prettier; C sources follow [`.clang-format`](.clang-format)                                                     |
-| `npm run verify:generated` | Check that the generated protocol files and example assets match their sources                                              |
-| `npm run bench`            | Core benchmarks; see below                                                                                                  |
+| Command                    | What it does                                                                                                                                                                    |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run verify`           | Everything below, in order. Run it before opening a pull request                                                                                                                |
+| `npm run build`            | Compile the SDK, copy the audio worklet and build both WebAssembly binaries                                                                                                     |
+| `npm run build:site`       | Build the website, the examples, the editor and the mobile app, and pack both npm tarballs                                                                                      |
+| `npm run test:c`           | Native C tests, with warnings as errors, in a normal build and under AddressSanitizer and UndefinedBehaviorSanitizer                                                            |
+| `npm test`                 | Node tests against the real WebAssembly: the ABI, rasterization, audio, the SDK, the portal bridge, the generator and its starters, the editor and the examples                 |
+| `npm run test:browser`     | Playwright tests in Chromium, Firefox and WebKit, served with the production Content-Security-Policy                                                                            |
+| `npm run test:package`     | Install the packed tarballs in fresh projects, build JavaScript and TypeScript consumers and generated starters, run them (the portal starters also in a stand-in portal frame) |
+| `npm run test:docs`        | Check that the site's source panels match the examples, typecheck the examples and check every Markdown link                                                                    |
+| `npm run test:game`        | Play the built site's Pac-Man in three browsers                                                                                                                                 |
+| `npm run lint`             | Strict TypeScript checks and source policy checks (C warnings are enforced by CMake)                                                                                            |
+| `npm run format`           | Format with Prettier; C sources follow [`.clang-format`](.clang-format)                                                                                                         |
+| `npm run verify:generated` | Check that the generated protocol files and example assets match their sources                                                                                                  |
+| `npm run bench`            | Core benchmarks; see below                                                                                                                                                      |
 
 For C work alone: `cmake --preset native && cmake --build --preset native && ctest --preset native`, or the `safety` preset for sanitizers. [`core/fuzz/`](core/fuzz) describes the libFuzzer targets and the seed corpus.
 

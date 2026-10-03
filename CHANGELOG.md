@@ -2,6 +2,25 @@
 
 All notable changes to `@pixeljs/core` and `@pixeljs/create` are documented here. Both packages share one version number.
 
+## 0.0.4 — 2026-10-03
+
+Games can now be published on the PixelJS portal at pixeljs.com.
+
+### Portal
+
+- `@pixeljs/core/portal`, a new entry point of `@pixeljs/core` without dependencies, connects a game to the PixelJS portal: levels and runs, scores on leaderboards, achievements, cloud saves, the player's public handle and online play. Games that do not import it do not load it.
+- `connectPortal()` speaks the portal's message protocol (version 2) from the game's frame. Anywhere else it resolves at once with `inPortal` false and every call still answers (results are not recorded and saves stay in memory), so the same build runs on any site and in Node.
+- `portal.launch` tells the game which play mode the player chose in the portal: `solo`, `local` or `online`.
+- `portal.multiplayer` joins quick matches and private rooms, starts matches, relays messages between the players' games and reports results.
+- `attachEngine(portal, engine)` lets the portal's pause, resume and mute controls drive an engine.
+- `createRandom(seed)` generates the same numbers from the same seed in every browser, for the seed that all the players of an online match receive and for replays.
+
+### Tools
+
+- Two new JavaScript starters: `portal`, a three-level platformer with leaderboards, stars, two achievements and a cloud save, and `board`, a two-player board game with play against the computer, two players on one device and online play, built around a small rules interface (tic-tac-toe as a placeholder).
+- `npm create @pixeljs@latest` asks which starter to create when it runs in an interactive terminal.
+- A guide, [Publish on PixelJS](docs/portal.md), and API reference entries for the portal module.
+
 ## 0.0.3 — 2026-09-30
 
 The first release.

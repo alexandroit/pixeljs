@@ -1,0 +1,68 @@
+{
+  "manifest_version": 2,
+  "min_age": 0,
+  "width": 320,
+  "height": 180,
+  "scale_mode": "integer",
+  "orientation": "landscape",
+  "inputs": ["keyboard", "touch", "gamepad"],
+  "controls_md": "- Arrows or A/D: move\n- Space, W or Up: jump\n- Escape: leave the level\n- Touch: hold the left quarter or the next one to walk, the right half to jump",
+  "capabilities": ["pause", "mute", "levels", "scores", "achievements", "save", "level-select"],
+  "levels": [
+    { "id": "1-1", "name": "First Steps", "par_time_ms": 8000 },
+    { "id": "1-2", "name": "Up We Go", "par_time_ms": 12000 },
+    { "id": "1-3", "name": "Spike Garden", "par_time_ms": 8000 }
+  ],
+  "leaderboards": [
+    {
+      "id": "level-score",
+      "name": "Best score",
+      "scope": "level",
+      "sort": "desc",
+      "type": "points",
+      "min": 0,
+      "max": 100000,
+      "periods": ["all", "week"]
+    },
+    {
+      "id": "fastest",
+      "name": "Fastest",
+      "scope": "level",
+      "sort": "asc",
+      "type": "time",
+      "min": 1000,
+      "max": 3600000,
+      "outcomes": ["complete"],
+      "periods": ["all", "week"]
+    },
+    {
+      "id": "total",
+      "name": "Total score",
+      "scope": "game",
+      "source": "sum_levels",
+      "of": "level-score",
+      "sort": "desc",
+      "type": "points",
+      "periods": ["all", "month", "week", "day"],
+      "default": true
+    }
+  ],
+  "achievements": [
+    {
+      "id": "first-steps",
+      "name": "First Steps",
+      "description": "Complete the first level.",
+      "points": 10,
+      "rule": { "complete": "1-1" }
+    },
+    {
+      "id": "all-stars",
+      "name": "All Stars",
+      "description": "Collect all nine stars.",
+      "points": 50,
+      "rule": { "stars": 9 }
+    }
+  ],
+  "save": { "slots": 1, "max_bytes": 4096, "schema": 1 },
+  "integrity": { "min_run_ms": 2000 }
+}

@@ -2,12 +2,12 @@
 
 An independent C17/WebAssembly pixel engine for JavaScript and TypeScript. Game code stays in JavaScript or TypeScript; drawing is validated and rasterized by C compiled to WASM and presented with WebGL2 (Canvas2D fallback), and a four-voice synthesizer plays sounds and music in an AudioWorklet. No runtime dependencies, no install scripts, no C toolchain needed.
 
-[Play the demo](https://pixeljs.com) · [Tutorial](https://github.com/alexandroit/pixeljs/blob/main/docs/tutorial.md) · [API reference](https://github.com/alexandroit/pixeljs/blob/main/docs/api.md) · [Editor](https://pixeljs.com/editor/) · [Source](https://github.com/alexandroit/pixeljs)
+[Play the demo](https://pixeljs.com) · [Tutorial](https://github.com/alexandroit/pixeljs/blob/main/docs/tutorial.md) · [API reference](https://github.com/alexandroit/pixeljs/blob/main/docs/api.md) · [Publish on PixelJS](https://github.com/alexandroit/pixeljs/blob/main/docs/portal.md) · [Editor](https://pixeljs.com/editor/) · [Source](https://github.com/alexandroit/pixeljs)
 
 ## Install
 
 ```sh
-npm create @pixeljs@latest my-game   # new project (Vite, JS or strict TS)
+npm create @pixeljs@latest my-game   # new project (Vite, JS or strict TS, or a portal starter)
 npm install @pixeljs/core            # existing project
 ```
 
@@ -49,6 +49,7 @@ TypeScript uses the same import; types such as `Engine`, `GameCallbacks` and `Im
 - **Capture:** `capture({ scale? })` resolves to a PNG `Blob` of the last presented frame (scale 1–8, nearest neighbor, either renderer). `startRecording({ maxSeconds?, scale? })`, `stopRecording()` (a looping GIF `Blob`) and `recording` keep the last seconds of presented frames; recording costs nothing per frame until started.
 - **Input:** keyboard (`isDown`, `wasPressed`, `wasReleased`), pointers (`pointer`, `pointers`), `wheel` and gamepads (`gamepads`, `isButtonDown`, `wasButtonPressed`, `wasButtonReleased`, `axis`); see [Input](#input).
 - **Audio (optional):** `audio.unlock()` from a user gesture, then `play`, `stop`, `setVolume`, `createSound`, `loadSound`, `createMusic`, `loadMusic`, `playMusic`, `stopMusic`, `musicPlaying`. Four voices; square, triangle, sine and noise waveforms with attack/decay/sustain/release and slide, vibrato and fade-out effects. A sound is one note or a jingle of up to 64 notes; music has up to four tracks of 512 notes, sequenced on the audio clock. Notes played before unlock or while paused are dropped, not queued; music requested before unlock starts once audio runs.
+- **Portal (`@pixeljs/core/portal`, a separate entry point):** `connectPortal`, `attachEngine` and `createRandom`; see [Publish on PixelJS](#publish-on-pixeljs).
 - **Errors:** `PixelJSError` with a `code` such as `RANGE`, `ARGUMENT`, `HANDLE`, `STATE`, `CAPACITY`, `RESOURCE_IN_USE`, `ASSET_LOAD`, `ASSET_DATA`, `ABORTED`, `UNSUPPORTED` or `AUDIO_ERROR`. Callback and audio errors are delivered to `onError`.
 
 ## Asset manifests and font files
@@ -111,6 +112,22 @@ With `'fit'` or `'integer'`, give the parent a definite size that does not depen
 Framebuffers and images up to 1024 × 1024 (1,048,576 pixels); 256 resources per engine; 4,096 draw commands and 16,000,000 work units per frame; palettes of 1–256 opaque colors, fixed per engine; tiles and glyphs up to 256 and 64 pixels; image files up to 16 MiB, JSON data and font files up to 1 MiB. Manifests: 1 MiB, 1,024 entries, ids of 1–64 characters `[A-Za-z0-9_.-]` (not `__proto__`, `constructor` or `prototype`), paths of up to 512 characters, 4 requests at a time and 16 MiB of `data` entries per bundle. Capture scale 1–8, one capture at a time. Recording: 1–60 seconds (default 10) of game time (a pause counts at most 0.25 s), at most 50 frames per second and 64 MiB of copied frames, GIF scale 1–4 and output up to 256 MiB; one recording, or its encoding, at a time. Each engine reserves 64 MiB of WASM memory; `getStats().coreBytes` counts C allocations only, not total browser memory.
 
 Input: 256 held or pending keys with codes up to 64 characters (a full queue resets held keys); 10 pointer contacts at once, counting released ones until their tick (further contacts are ignored); both overflows are counted in `getStats().inputOverflows`. The wheel reports at most ±100 lines per axis and tick. Four gamepads (indices 0–3) with 17 buttons and 4 axes each; device ids are cut to 128 characters.
+
+## Publish on PixelJS
+
+The PixelJS portal at [pixeljs.com](https://pixeljs.com) gives games levels, leaderboards, achievements, cloud saves and online play. A game declares what it uses in `pixeljs.json` and connects through `@pixeljs/core/portal`, an entry point without dependencies that games load only when they import it:
+
+```js
+import { attachEngine, connectPortal, createRandom } from '@pixeljs/core/portal';
+
+const portal = await connectPortal({ capabilities: ['pause', 'mute', 'levels', 'scores'] });
+attachEngine(portal, engine); // after engine.start(): the portal's pause, resume and mute
+const run = await portal.levelStart('1-1');
+const answer = await portal.levelEnd(run, { outcome: 'complete', scores: { 'level-score': 4200 } });
+portal.multiplayer.on('start', ({ seed }) => startMatch(createRandom(seed)));
+```
+
+Outside the portal every call still answers (`inPortal` is false, results are not recorded and saves stay in memory), so the same build runs on any site and in Node. `createRandom(seed)` uses only 32-bit integer arithmetic, so a seed gives the same numbers in every browser; it is not cryptographic. `npm create @pixeljs@latest my-game -- --template portal` (levels) or `--template board` (solo, local and online play for two) starts a project ready for the portal. The [guide](https://github.com/alexandroit/pixeljs/blob/main/docs/portal.md) covers the manifest and the workflow, and the [developer guide](https://pixeljs.com/developers) on pixeljs.com every field and limit.
 
 ## Deployment and CSP
 

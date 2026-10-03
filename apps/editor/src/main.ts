@@ -165,4 +165,4 @@ window.addEventListener('keydown', (event) => {
   if (handled) event.preventDefault();
 });
 
-status.info('PixelJS Studio 0.0.3: a new project with the default 16-color palette.');
+status.info('PixelJS Studio 0.0.4: a new project with the default 16-color palette.');

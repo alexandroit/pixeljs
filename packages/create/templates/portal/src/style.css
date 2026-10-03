@@ -1,0 +1,17 @@
+/* The canvas fills the window at a whole-number scale: the engine sizes it. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background-color: #0d111c;
+}
+body {
+  display: grid;
+  place-items: center;
+}
+canvas {
+  display: block;
+  outline: none;
+  image-rendering: pixelated;
+}

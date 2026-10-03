@@ -2,15 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, rm, readdir, readFile, writeFile, mkdir, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { spawn } from 'node:child_process';
+import { build } from 'vite';
 import {
+  TEMPLATES,
   createProject,
   validateDestination,
   normalizeTemplate,
   sanitizeProjectName,
 } from '../packages/create/src/index.js';
 import { runCli } from '../packages/create/src/cli.js';
+import { LEVELS } from '../packages/create/templates/portal/src/world.js';
 
 test('template normalization and project name sanitization', () => {
   assert.equal(normalizeTemplate('ts'), 'typescript');
@@ -19,8 +22,13 @@ test('template normalization and project name sanitization', () => {
   assert.equal(normalizeTemplate('js'), 'javascript');
   assert.equal(normalizeTemplate('javascript'), 'javascript');
   assert.equal(normalizeTemplate('JS'), 'javascript');
+  assert.equal(normalizeTemplate('portal'), 'portal');
+  assert.equal(normalizeTemplate('Board'), 'board');
+  assert.deepEqual(Object.keys(TEMPLATES), ['typescript', 'javascript', 'portal', 'board']);
   assert.throws(() => normalizeTemplate('python'), /Invalid template/);
   assert.throws(() => normalizeTemplate(''), /Invalid template/);
+  for (const name of ['constructor', '__proto__', 'toString'])
+    assert.throws(() => normalizeTemplate(name), /Available templates: typescript, javascript/);
 
   assert.equal(sanitizeProjectName('my-cool-game'), 'my-cool-game');
   assert.equal(sanitizeProjectName('My Game 123!'), 'my-game-123');
@@ -231,7 +239,7 @@ test('cli binary executes correctly for help, version and scaffolding', async ()
     child.stdout.on('data', (d) => (out += d.toString()));
     child.on('close', (code) => (code === 0 ? res(out) : rej(new Error(`Exit code ${code}`))));
   });
-  assert.ok(versionOut.includes('@pixeljs/create v0.0.3'));
+  assert.ok(versionOut.includes('@pixeljs/create v0.0.4'));
 
   // Test binary scaffold in temp dir
   const tempDir = await mkdtemp(join(tmpdir(), 'pixeljs-cli-test-'));
@@ -249,6 +257,198 @@ test('cli binary executes correctly for help, version and scaffolding', async ()
     const files = await readdir(projectDir);
     assert.ok(files.includes('package.json'));
     assert.ok(files.includes('tsconfig.json'));
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+// Games on the portal run in a sandbox: no network requests and no browser storage.
+const OUTSIDE_SANDBOX =
+  /\b(localStorage|sessionStorage|indexedDB|XMLHttpRequest|WebSocket)\b|document\.cookie|\bfetch\s*\(/;
+
+test('the portal and board starters are ready for the PixelJS portal', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'pixeljs-portal-starters-'));
+  const core = JSON.parse(await readFile('packages/core/package.json', 'utf8'));
+  try {
+    for (const template of ['portal', 'board']) {
+      const target = join(tempDir, `my-${template}-game`);
+      const result = await createProject({ targetDir: target, template });
+      assert.equal(result.template, template);
+      const files = (await readdir(target, { recursive: true })).map((file) =>
+        file.split(sep).join('/'),
+      );
+      for (const file of [
+        'package.json',
+        'index.html',
+        'vite.config.js',
+        '.gitignore',
+        'README.md',
+        'public/pixeljs.json',
+        'src/main.js',
+        'src/style.css',
+      ])
+        assert.ok(files.includes(file), `the ${template} starter has ${file}`);
+      assert.ok(!files.includes('_gitignore'));
+
+      const pkg = JSON.parse(await readFile(join(target, 'package.json'), 'utf8'));
+      assert.equal(pkg.name, `my-${template}-game`);
+      assert.equal(pkg.dependencies['@pixeljs/core'], `^${core.version}`);
+      const readme = await readFile(join(target, 'README.md'), 'utf8');
+      assert.ok(readme.startsWith(`# my-${template}-game\n`));
+      assert.ok(readme.includes('npm run build') && readme.includes('PixelJS studio'));
+      assert.ok(readme.includes('https://pixeljs.com/developers/tutorial/'));
+      assert.ok(
+        (await readFile(join(target, 'index.html'), 'utf8')).includes('src="/src/main.js"'),
+      );
+      // Relative URLs: the portal serves the build from its own folder.
+      assert.match(await readFile(join(target, 'vite.config.js'), 'utf8'), /base: '\.\/'/);
+
+      const main = await readFile(join(target, 'src/main.js'), 'utf8');
+      assert.ok(
+        main.includes("import { attachEngine, connectPortal } from '@pixeljs/core/portal'"),
+      );
+      for (const file of files.filter((name) => name.endsWith('.js'))) {
+        const source = await readFile(join(target, file), 'utf8');
+        assert.doesNotMatch(source, OUTSIDE_SANDBOX, `${template}/${file} fits the portal sandbox`);
+        assert.ok(!source.includes('{{'), `${template}/${file} has no placeholder left`);
+      }
+
+      const manifest = JSON.parse(await readFile(join(target, 'public/pixeljs.json'), 'utf8'));
+      assert.equal(manifest.manifest_version, 2);
+      assert.equal(manifest.min_age, 0);
+      // The game asks for exactly the capabilities its manifest declares.
+      const requested = /capabilities: \[([^\]]*)\]/.exec(main)[1];
+      assert.deepEqual(
+        [...requested.matchAll(/'([^']+)'/g)].map((match) => match[1]),
+        manifest.capabilities,
+      );
+      if (template === 'portal') {
+        assert.deepEqual(manifest.capabilities, [
+          'pause',
+          'mute',
+          'levels',
+          'scores',
+          'achievements',
+          'save',
+          'level-select',
+        ]);
+        assert.deepEqual(
+          manifest.levels.map((level) => level.id),
+          LEVELS.map((level) => level.id),
+        );
+        assert.deepEqual(
+          manifest.levels.map((level) => level.par_time_ms),
+          LEVELS.map((level) => level.par),
+        );
+        const boards = Object.fromEntries(manifest.leaderboards.map((board) => [board.id, board]));
+        assert.deepEqual(Object.keys(boards), ['level-score', 'fastest', 'total']);
+        assert.equal(boards['level-score'].scope, 'level');
+        assert.equal(boards.fastest.sort, 'asc');
+        assert.equal(boards.total.source, 'sum_levels');
+        assert.equal(boards.total.of, 'level-score');
+        assert.equal(boards.total.default, true);
+        assert.equal(manifest.achievements.length, 2);
+        assert.ok(manifest.achievements.every((achievement) => achievement.rule));
+        assert.ok(manifest.save.slots >= 1);
+      } else {
+        for (const file of [
+          'src/rules.js',
+          'src/board.js',
+          'src/modes/solo.js',
+          'src/modes/local.js',
+          'src/modes/online.js',
+        ])
+          assert.ok(files.includes(file), `the board starter has ${file}`);
+        assert.deepEqual(manifest.capabilities, ['pause', 'mute', 'multiplayer']);
+        assert.deepEqual(manifest.play_modes, ['solo', 'local', 'online']);
+        assert.equal(manifest.local_players, 2);
+        assert.deepEqual(manifest.multiplayer, {
+          min_players: 2,
+          max_players: 2,
+          modes: [{ id: 'versus', name: 'Versus' }],
+          quick_match: true,
+          private_rooms: true,
+          join_in_progress: false,
+          max_message_bytes: 1024,
+          max_messages_per_second: 10,
+        });
+        const online = await readFile(join(target, 'src/modes/online.js'), 'utf8');
+        assert.match(online, /const MODE = 'versus';/);
+      }
+    }
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('the portal and board starters build with Vite against the core', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'pixeljs-portal-builds-'));
+  const repoRoot = resolve('.');
+  try {
+    for (const template of ['portal', 'board']) {
+      const target = join(tempDir, template);
+      await createProject({ targetDir: target, template });
+      await mkdir(join(target, 'node_modules/@pixeljs'), { recursive: true });
+      await symlink(
+        join(repoRoot, 'packages/core'),
+        join(target, 'node_modules/@pixeljs/core'),
+        'dir',
+      );
+      await symlink(join(repoRoot, 'node_modules/vite'), join(target, 'node_modules/vite'), 'dir');
+      await build({ root: target, logLevel: 'error' });
+      const dist = join(target, 'dist');
+      const built = (await readdir(dist, { recursive: true })).map((file) =>
+        file.split(sep).join('/'),
+      );
+      assert.deepEqual(
+        JSON.parse(await readFile(join(dist, 'pixeljs.json'), 'utf8')),
+        JSON.parse(await readFile(join(target, 'public/pixeljs.json'), 'utf8')),
+        'pixeljs.json is at the root of the build',
+      );
+      assert.ok(built.some((file) => file.endsWith('.wasm')));
+      // The audio worklet stays a file of its own: the portal runs no inlined scripts.
+      assert.ok(built.some((file) => /\/processor-[^/]*\.js$/.test(file)));
+      const html = await readFile(join(dist, 'index.html'), 'utf8');
+      assert.doesNotMatch(html, /(src|href)="\//, 'the build uses relative URLs');
+      assert.match(html, /src="\.\/assets\/[^"]+\.js"/);
+    }
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('the cli creates the portal starters and keeps typescript as the non-interactive default', async (t) => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'pixeljs-cli-portal-'));
+  const binPath = resolve('packages/create/bin/create-pixeljs.js');
+  const runBin = (args) =>
+    new Promise((res, rej) => {
+      // No terminal on stdin: the cli never waits for an answer.
+      const child = spawn(process.execPath, [binPath, ...args], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      let out = '';
+      child.stdout.on('data', (d) => (out += d.toString()));
+      child.on('close', (code) => (code === 0 ? res(out) : rej(new Error(`Exit code ${code}`))));
+    });
+  try {
+    const help = await runBin(['--help']);
+    for (const [name, description] of Object.entries(TEMPLATES)) {
+      assert.ok(help.includes(name) && help.includes(description), `--help lists ${name}`);
+    }
+    const board = await runBin([join(tempDir, 'board-game'), '--template', 'board']);
+    assert.ok(board.includes('(board)'));
+    assert.ok(board.includes('https://pixeljs.com/developers'));
+    assert.ok((await readdir(join(tempDir, 'board-game/src/modes'))).includes('online.js'));
+    const plain = await runBin([join(tempDir, 'default-game')]);
+    assert.ok(plain.includes('(typescript)'));
+    assert.ok(!plain.includes('https://pixeljs.com/developers'));
+    assert.ok((await readdir(join(tempDir, 'default-game'))).includes('tsconfig.json'));
+
+    const lines = [];
+    t.mock.method(console, 'log', (line) => lines.push(String(line)));
+    await runCli([join(tempDir, 'portal-game'), '--template=portal']);
+    assert.ok(lines.join('\n').includes('Success! Created portal-game'));
+    assert.ok((await readdir(join(tempDir, 'portal-game/public'))).includes('pixeljs.json'));
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }

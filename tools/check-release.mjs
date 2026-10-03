@@ -1,5 +1,5 @@
 // Fails when publication metadata disagrees. Usage: node tools/check-release.mjs [vX.Y.Z]
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 
 const REPOSITORY = 'git+https://github.com/alexandroit/pixeljs.git';
 const read = (path) => readFile(path, 'utf8');
@@ -37,12 +37,20 @@ for (const [directory, manifest] of Object.entries(packages)) {
     `${where}/LICENSE must equal the root LICENSE.`,
   );
 }
+const portal = packages.core.exports?.['./portal'];
+expect(
+  portal?.types === './dist/portal.d.ts' && portal?.import === './dist/portal.js',
+  'packages/core must export ./portal from dist/portal.js with its declarations.',
+);
 const index = await read('packages/core/src/index.ts');
 expect(
   index.includes(`export const version = '${version}';`),
   'packages/core/src/index.ts must export the package version.',
 );
-for (const template of ['javascript', 'typescript']) {
+const templates = await readdir('packages/create/templates');
+for (const template of ['javascript', 'typescript', 'portal', 'board'])
+  expect(templates.includes(template), `The ${template} starter is missing.`);
+for (const template of templates) {
   const manifest = JSON.parse(await read(`packages/create/templates/${template}/package.json`));
   expect(
     manifest.dependencies?.['@pixeljs/core'] === '{{PIXELJS_CORE_VERSION}}',

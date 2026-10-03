@@ -1,7 +1,7 @@
 {
   "name": "@pixeljs/create",
-  "version": "0.0.3",
-  "description": "Create a ready-to-run PixelJS game project in JavaScript or TypeScript.",
+  "version": "0.0.4",
+  "description": "Create a ready-to-run PixelJS game project in JavaScript or TypeScript, or a game ready for the PixelJS portal.",
   "keywords": [
     "pixeljs",
     "create",

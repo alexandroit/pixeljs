@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(PixelJS VERSION 0.0.3 LANGUAGES C)
+project(PixelJS VERSION 0.0.4 LANGUAGES C)
 
 option(PX_SANITIZE "Enable native AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 option(PX_BUILD_FUZZER "Build Clang libFuzzer command decoder target" OFF)

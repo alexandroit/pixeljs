@@ -1,6 +1,6 @@
 {
   "name": "@pixeljs/core",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "An independent C17/WebAssembly pixel engine for JavaScript and TypeScript: indexed graphics, tilemaps, bitmap text, input and an AudioWorklet synthesizer.",
   "keywords": [
     "pixel-art",
@@ -30,6 +30,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./portal": {
+      "types": "./dist/portal.d.ts",
+      "import": "./dist/portal.js"
     },
     "./package.json": "./package.json"
   },

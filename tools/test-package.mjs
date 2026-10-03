@@ -51,6 +51,83 @@ const types = {
   '.svg': 'image/svg+xml',
 };
 
+// Outside a portal frame, @pixeljs/core/portal answers every call by itself, in Node too.
+const PORTAL_IN_NODE = `
+import { connectPortal, createRandom } from '@pixeljs/core/portal';
+const portal = await connectPortal();
+const answer = await portal.levelEnd(await portal.levelStart('1-1'), { outcome: 'complete' });
+if (portal.inPortal || answer.reason !== 'not_in_portal' || createRandom(0).next() !== 1144304738)
+  throw new Error('@pixeljs/core/portal does not work in Node.');
+`;
+
+// A strict TypeScript consumer of the portal entry's declarations.
+const PORTAL_CONSUMER = `import { createEngine } from '@pixeljs/core';
+import {
+  attachEngine,
+  connectPortal,
+  createRandom,
+  type LevelEndResult,
+  type MatchStart,
+  type Portal,
+} from '@pixeljs/core/portal';
+
+export async function play(canvas: HTMLCanvasElement): Promise<Portal> {
+  const portal = await connectPortal({ capabilities: ['pause', 'mute', 'scores', 'multiplayer'] });
+  const engine = await createEngine({ canvas });
+  engine.start({ update() {}, draw() {} });
+  const detach: () => void = attachEngine(portal, engine, { volume: 0.5 });
+  portal.on('mute', ({ muted }) => engine.audio.setVolume(muted ? 0 : 1));
+  portal.multiplayer.on('start', (match: MatchStart) => {
+    const random = createRandom(match.seed);
+    portal.multiplayer.send({ roll: random.range(1, 6) }, { to: match.host });
+  });
+  const run = await portal.levelStart('1-1');
+  const answer: LevelEndResult = await portal.levelEnd(run, { outcome: 'complete', scores: { total: 9 } });
+  if (answer.newBest?.['total'] === true) detach();
+  const saved = await portal.save('slot-1', JSON.stringify({ level: 2 }), { rev: 0 });
+  if (!saved.ok) throw new Error(saved.reason);
+  // @ts-expect-error: a run ends as 'complete', 'fail' or 'quit'.
+  await portal.levelEnd(run, { outcome: 'won' });
+  return portal;
+}
+`;
+
+// A stand-in for the portal page: it frames the game with a nonce in the URL, answers
+// the bridge and records every message the game sends.
+const FAKE_PORTAL = `const NONCE = 'package-test-nonce-0123';
+const launch = JSON.parse(new URLSearchParams(location.search).get('launch') || '{"mode":"solo"}');
+const frame = document.createElement('iframe');
+frame.src = '/index.html#pjs=' + NONCE;
+frame.width = 640;
+frame.height = 360;
+document.body.append(frame);
+window.received = [];
+window.portalSend = (type, data, re) =>
+  frame.contentWindow.postMessage({ pjs: 2, type, nonce: NONCE, re, data }, '*');
+const room = {
+  code: 'ABC234', mode: 'versus', private: true, state: 'playing', host: 0, me: 0, min: 2, max: 2,
+  players: [0, 1].map((slot) => ({ slot, handle: 'player' + slot, avatar: 'a01', ready: false, connected: true })),
+};
+window.startMatch = () => {
+  window.portalSend('mp.room', room);
+  window.portalSend('mp.start', { ...room, seed: 0 });
+};
+addEventListener('message', (event) => {
+  const message = event.data;
+  if (event.source !== frame.contentWindow || message?.pjs !== 2 || message.nonce !== NONCE) return;
+  window.received.push(message);
+  const reply = (data) => window.portalSend('reply', data, message.id);
+  if (message.type === 'hello')
+    window.portalSend('welcome', { bridge: '2.0.0', capabilities: message.data.capabilities, launch });
+  else if (message.type === 'level.start') reply({ ok: true, run: 'run-1', level: message.data.level });
+  else if (message.type === 'levels.get') reply({ ok: true, levels: {} });
+  else if (message.type === 'load') reply({ ok: true, data: null, rev: 0, schema: 0 });
+  else if (message.type === 'player.get') reply({ ok: true, signedIn: true, handle: 'player0' });
+  else if (message.id) reply({ ok: true, recorded: true });
+});
+`;
+const PORTAL_STARTERS = new Set(['portal', 'board']);
+
 /** Serves `routes` (URL prefix → directory) with the production CSP. */
 async function serve(routes) {
   const server = createServer(async (request, response) => {
@@ -115,6 +192,23 @@ async function waitForPixels(page) {
   );
 }
 
+/** Counts the WebAssembly files a page loaded: the engine's, then the audio worklet's. */
+function countWasm(page) {
+  const loaded = { count: 0 };
+  page.on('response', (response) => {
+    if (/\.wasm(\?|$)/.test(response.url()) && response.ok()) loaded.count++;
+  });
+  return loaded;
+}
+
+/** Starts a starter's sound: its button, or for portal starters the first key press. */
+async function startSound(page, template, wasm) {
+  if (!PORTAL_STARTERS.has(template)) return unlockAudio(page, '#audio-toggle');
+  await page.keyboard.press('KeyX');
+  for (let wait = 0; wait < 100 && wasm.count < 2; wait++) await page.waitForTimeout(100);
+  if (wasm.count < 2) throw new Error(`The ${template} starter did not start its sound.`);
+}
+
 /** Clicks an audio toggle and waits for the worklet-backed state to report sound on. */
 async function unlockAudio(page, selector) {
   await page.locator(selector).click();
@@ -161,6 +255,10 @@ try {
     )
       throw new Error('The archive must carry the MIT license text.');
     await access(join(installed, 'dist/internal/audio/processor.js'));
+    // The portal entry is in the archive and resolves through the package's exports.
+    await access(join(installed, 'dist/portal.js'));
+    await access(join(installed, 'dist/portal.d.ts'));
+    run(process.execPath, ['--input-type=module', '--eval', PORTAL_IN_NODE], { cwd: root });
     const source = join(root, 'examples');
     await cp(join(repo, 'examples/javascript'), join(source, 'javascript'), { recursive: true });
     await cp(join(repo, 'examples/typescript'), join(source, 'typescript'), { recursive: true });
@@ -177,9 +275,14 @@ try {
           noEmit: true,
           types: [],
         },
-        include: ['examples/typescript/main.ts', 'examples/javascript/game.d.ts'],
+        include: [
+          'examples/typescript/main.ts',
+          'examples/javascript/game.d.ts',
+          'portal-consumer.ts',
+        ],
       };
       await writeFile(join(root, 'tsconfig.json'), JSON.stringify(tsconfig));
+      await writeFile(join(root, 'portal-consumer.ts'), PORTAL_CONSUMER);
       run(process.execPath, [
         join(repo, 'node_modules/typescript/bin/tsc'),
         '-p',
@@ -287,7 +390,70 @@ window.nativeEngine=engine;`,
     }
   }
 
-  // The scaffolding tool, exactly as packed: generate, build and run both starters.
+  /** Runs a portal starter's build in a stand-in portal page and checks its messages. */
+  async function playInPortal(template, dist) {
+    const host = join(dir, `portal for ${template}`);
+    await mkdir(host);
+    await writeFile(
+      join(host, 'index.html'),
+      '<!doctype html><html lang="en"><meta charset="utf-8"><title>Portal</title><body><script type="module" src="./portal.js"></script></body></html>',
+    );
+    await writeFile(join(host, 'portal.js'), FAKE_PORTAL);
+    const server = await serve({ '/portal/': host, '/': dist });
+    const { page, errors } = await openPage(browser);
+    const sent = (type, count = 1) =>
+      page
+        .waitForFunction(
+          ([kind, n]) => window.received.filter((message) => message.type === kind)[n - 1],
+          [type, count],
+          { timeout: 10_000 },
+        )
+        .then((found) => found.jsonValue());
+    try {
+      const launch = encodeURIComponent(
+        JSON.stringify({ mode: template === 'board' ? 'online' : 'solo' }),
+      );
+      await page.goto(`${server.origin}/portal/?launch=${launch}`);
+      const hello = await sent('hello');
+      const manifest = JSON.parse(await readFile(join(dist, 'pixeljs.json'), 'utf8'));
+      if (
+        hello.data.bridge !== '2.0.0' ||
+        hello.data.engine !== `@pixeljs/core@${core.version}` ||
+        JSON.stringify(hello.data.capabilities) !== JSON.stringify(manifest.capabilities)
+      )
+        throw new Error(`The ${template} starter said hello wrongly: ${JSON.stringify(hello)}`);
+      await sent('ready');
+      const canvas = page.frameLocator('iframe').locator('canvas');
+      if (template === 'portal') {
+        await canvas.click({ position: { x: 2, y: 2 } });
+        await sent('interaction');
+        await page.keyboard.press('Enter');
+        const start = await sent('level.start');
+        await page.keyboard.press('Escape');
+        const end = await sent('level.end');
+        if (start.data.level !== '1-1' || end.data.run !== 'run-1' || end.data.outcome !== 'quit')
+          throw new Error(`The portal starter reported its run wrongly: ${JSON.stringify(end)}`);
+      } else {
+        // An online match in which this player hosts and, with seed 0, plays first.
+        await page.evaluate(() => window.startMatch());
+        await page.waitForTimeout(300);
+        await canvas.click(); // the middle cell
+        const first = await sent('mp.send');
+        await page.evaluate(() =>
+          window.portalSend('mp.message', { from: 1, data: { t: 'move', move: 0 } }),
+        );
+        const second = await sent('mp.send', 2);
+        if (first.data.data.state !== '....0....1' || second.data.data.state !== '1...0....0')
+          throw new Error(`The board starter refereed wrongly: ${JSON.stringify([first, second])}`);
+      }
+      if (errors.length) throw new Error(`${template} starter in a portal frame failed: ${errors}`);
+    } finally {
+      await page.close();
+      await server.close();
+    }
+  }
+
+  // The scaffolding tool, exactly as packed: generate, build and run every starter.
   const toolRoot = join(dir, 'create-tool');
   await mkdir(toolRoot);
   run('tar', ['-xzf', createArchive, '-C', toolRoot]);
@@ -298,7 +464,7 @@ window.nativeEngine=engine;`,
     toolMetadata.scripts?.postinstall
   )
     throw new Error('@pixeljs/create must not need dependencies or install hooks.');
-  for (const template of ['javascript', 'typescript']) {
+  for (const template of ['javascript', 'typescript', 'portal', 'board']) {
     const starter = join(dir, `starter ${template}`);
     run(process.execPath, [
       join(toolRoot, 'package/bin/create-pixeljs.js'),
@@ -322,15 +488,17 @@ window.nativeEngine=engine;`,
     await build({ root: starter, logLevel: 'error' });
     const server = await serve({ '/': join(starter, 'dist') });
     const { page, errors } = await openPage(browser);
+    const wasm = countWasm(page);
     try {
       await page.goto(`${server.origin}/`);
       await waitForPixels(page);
-      await unlockAudio(page, '#audio-toggle');
+      await startSound(page, template, wasm);
       if (errors.length) throw new Error(`${template} starter failed: ${errors.join('; ')}`);
     } finally {
       await page.close();
       await server.close();
     }
+    if (PORTAL_STARTERS.has(template)) await playInPortal(template, join(starter, 'dist'));
     // `npm run dev`: the unbundled development server must work too.
     const dev = await createViteServer({
       root: starter,
@@ -339,10 +507,11 @@ window.nativeEngine=engine;`,
     });
     await dev.listen();
     const devPage = await openPage(browser);
+    const devWasm = countWasm(devPage.page);
     try {
       await devPage.page.goto(dev.resolvedUrls.local[0]);
       await waitForPixels(devPage.page);
-      await unlockAudio(devPage.page, '#audio-toggle');
+      await startSound(devPage.page, template, devWasm);
       if (devPage.errors.length)
         throw new Error(`${template} dev server failed: ${devPage.errors.join('; ')}`);
     } finally {
@@ -358,11 +527,12 @@ window.nativeEngine=engine;`,
       csp: 'production',
       devServer: true,
       audio: 'running',
+      portalFrame: PORTAL_STARTERS.has(template),
     });
   }
   await writeFile('artifacts/package-tests.json', JSON.stringify(results, null, 2) + '\n');
   console.log(
-    'PASS: packed @pixeljs/core in JS/TS consumers and packed @pixeljs/create starters (build, dev server, production CSP, rendering, audio, lifecycle).',
+    'PASS: packed @pixeljs/core in JS/TS consumers, its portal entry, and packed @pixeljs/create starters (build, dev server, production CSP, rendering, audio, lifecycle, portal frame).',
   );
 } finally {
   await browser.close();

@@ -37,6 +37,7 @@ Play the demo at **[pixeljs.com](https://pixeljs.com)**, then make your own game
 - Keyboard, mouse, touch (up to 10 contacts), wheel and gamepad input
 - PNG screenshots and GIF recordings of the game
 - PixelJS Studio, a browser editor for sprites, palettes, tilemaps, sounds and music
+- Ready for the PixelJS portal: levels, leaderboards, achievements, cloud saves and online play through `@pixeljs/core/portal`
 - WebGL2 rendering with a Canvas2D fallback; about 66 KiB of compressed JavaScript and WebAssembly before the first frame; no runtime dependencies
 
 ### Color Palette
@@ -56,7 +57,7 @@ npm install
 npm run dev
 ```
 
-The starter is a small platformer in strict TypeScript, built with [Vite](https://vite.dev). Add `-- --template javascript` after the project name for plain JavaScript.
+In an interactive terminal it asks which starter you want. The default is a small platformer in strict TypeScript, built with [Vite](https://vite.dev); add `-- --template javascript` after the project name for the same game in plain JavaScript. Two more starters are ready for the PixelJS portal: `--template portal`, with levels, leaderboards, achievements and a cloud save, and `--template board`, a board game for two players with solo, local and online play.
 
 ### Add PixelJS to an existing project
 
@@ -72,6 +73,8 @@ The package contains ES modules, type declarations, both WebAssembly binaries an
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | [Pac-Man](https://pixeljs.com) ([source](examples/javascript))        | Tilemaps, sprite sheets, bitmap fonts, sounds and music loaded from one asset manifest, touch and gamepad controls |
 | The starter platformer (`npm create @pixeljs@latest`)                 | Sprites, shapes, text, synthesized sounds and music, keyboard and gamepad input                                    |
+| The portal starter (`--template portal`)                              | Three levels with leaderboards, stars, achievements and a cloud save on the PixelJS portal                         |
+| The board game starter (`--template board`)                           | Tic-tac-toe against the computer, for two players on one device, and online with a host as referee                 |
 | [Star Catcher](docs/tutorial.md)                                      | The game you build in the tutorial, step by step                                                                   |
 | [PixelJS Studio](https://pixeljs.com/editor/) ([source](apps/editor)) | The editor, itself built on PixelJS for its live previews                                                          |
 
@@ -202,6 +205,20 @@ The animations in this README were recorded that way.
 
 `npm run build` in a starter project writes static files to `dist/`. Upload them to any static host. Serve `.wasm` files as `application/wasm` and use HTTPS, which browsers require for the audio worklet. If your site sends a Content-Security-Policy, `script-src 'self' 'wasm-unsafe-eval'` is all PixelJS needs: it never uses `eval`, inline scripts or remote code.
 
+To publish on [pixeljs.com](https://pixeljs.com) instead, with levels, leaderboards, achievements, cloud saves and online play, add a `pixeljs.json` manifest and connect the game with `@pixeljs/core/portal`:
+
+```js
+import { attachEngine, connectPortal } from '@pixeljs/core/portal';
+
+const portal = await connectPortal({ capabilities: ['pause', 'mute', 'levels', 'scores'] });
+// … create and start the engine …
+attachEngine(portal, engine); // the portal's pause, resume and mute buttons
+const run = await portal.levelStart('1-1');
+await portal.levelEnd(run, { outcome: 'complete', scores: { 'level-score': 4200 } });
+```
+
+Outside the portal every call still answers, so the same build runs anywhere. [Publish on PixelJS](docs/portal.md) explains the manifest, saves and online play.
+
 ## API Reference
 
 This is a summary. The [API reference](docs/api.md) documents every option, error and limit, and the [tutorial](docs/tutorial.md) builds a complete game.
@@ -274,6 +291,14 @@ Available as `engine.audio`.
 - `capture({ scale? })`: A PNG of the last displayed frame
 - `startRecording({ maxSeconds?, scale? })`, `stopRecording()`, `recording`: Record a looping GIF of the frames in between
 
+### Portal
+
+Imported from `@pixeljs/core/portal`, a separate entry point.
+
+- `connectPortal({ capabilities?, engine?, timeoutMs? })`: Connect to the PixelJS portal: levels and runs (`levelStart`, `levelEnd`, `gameOver`), achievements (`unlock`), saves (`save`, `load`), the player (`player`), events (`on`) and online play (`multiplayer`)
+- `attachEngine(portal, engine)`: Let the portal pause, resume and mute an engine
+- `createRandom(seed)`: A seeded generator that gives the same numbers in every browser, for online matches and replays
+
 Errors are `PixelJSError` objects with a `code` such as `RANGE`, `STATE`, `CAPACITY` or `ASSET_LOAD`; see the [API reference](docs/api.md#errors).
 
 ## How It Works
@@ -292,6 +317,7 @@ To build PixelJS from source and run its tests (the C core natively and under sa
 
 - [Tutorial](docs/tutorial.md): your first game, step by step
 - [API reference](docs/api.md): every function, option and limit
+- [Publish on PixelJS](docs/portal.md): levels, leaderboards, saves and online play on pixeljs.com
 - [Architecture](docs/architecture.md): how the engine is built
 - [Changelog](CHANGELOG.md)
 

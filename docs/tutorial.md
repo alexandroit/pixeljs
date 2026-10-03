@@ -263,3 +263,4 @@ Before the page closes, `engine.dispose()` releases the engine, its audio and it
 - Read the complete [API reference](api.md): palettes, tilemaps, fonts, cameras and clipping, sprite rotation and scaling, color remapping, pausing, errors and limits.
 - Study the [Pac-Man example](../examples/javascript), which loads its maze tiles, sprites, font, sounds and music from one manifest.
 - Open [PixelJS Studio](https://pixeljs.com/editor/) to draw sprites and maps and compose music for your game.
+- [Publish on PixelJS](portal.md): put your game on pixeljs.com with levels, leaderboards, achievements, cloud saves and online play.

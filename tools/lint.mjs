@@ -17,6 +17,9 @@ for (const path of [
   'packages/create/src/index.js',
 ])
   run(process.execPath, ['--check', path]);
+await visit('packages/create/templates', async (path) => {
+  if (path.endsWith('.js')) run(process.execPath, ['--check', path]);
+});
 for (const directory of ['core/src', 'bridge/wasm', 'bridge/audio'])
   await visit(directory, async (path) => {
     if (!/\.[ch]$/.test(path)) return;

@@ -4,7 +4,7 @@ import { createEngine, PixelJSError, version } from '../packages/core/dist/index
 import { integer, flag } from '../packages/core/dist/api/errors.js';
 
 test('ESM import has no DOM side effects and exports no raw memory or handles', () => {
-  assert.equal(version, '0.0.3');
+  assert.equal(version, '0.0.4');
   assert.equal(typeof createEngine, 'function');
   assert.equal(typeof globalThis.window, 'undefined');
 });
