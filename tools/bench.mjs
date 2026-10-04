@@ -49,7 +49,7 @@ for (const id of ['B08', 'B10']) if (selected(settings, id)) results.push(NOT_EX
 
 finishEnvironment(env);
 const markdown = renderReport({
-  title: 'PixelJS 0.0.4 Node benchmarks (core, DSP and audio transport)',
+  title: 'PixelJS 0.0.5 Node benchmarks (core, DSP and audio transport)',
   env,
   settings,
   results,

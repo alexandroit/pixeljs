@@ -81,6 +81,9 @@ export async function play(canvas: HTMLCanvasElement): Promise<Portal> {
     const random = createRandom(match.seed);
     portal.multiplayer.send({ roll: random.range(1, 6) }, { to: match.host });
   });
+  void portal.multiplayer.result([0, 1], { draw: true });
+  // @ts-expect-error: draw is a boolean, not a string.
+  void portal.multiplayer.result([0, 1], { draw: 'true' });
   const run = await portal.levelStart('1-1');
   const answer: LevelEndResult = await portal.levelEnd(run, { outcome: 'complete', scores: { total: 9 } });
   if (answer.newBest?.['total'] === true) detach();

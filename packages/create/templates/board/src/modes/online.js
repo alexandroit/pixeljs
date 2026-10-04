@@ -79,10 +79,12 @@ export function createOnline(portal, onRoom) {
     screen = 'over';
     ready = false;
     if (isHost() && !match.reported) {
-      // The placements: room slots, the winner first (a draw keeps the slots' order).
+      // Draws give both slots equal placement instead of inventing a winner.
       match.reported = true;
       const [first, second] = match.slots;
-      void online.result(outcome.winner === 1 ? [second, first] : [first, second]);
+      void online.result(outcome.winner === 1 ? [second, first] : [first, second], {
+        draw: outcome.draw === true,
+      });
     }
   }
 

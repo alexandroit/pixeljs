@@ -243,6 +243,7 @@ test('outside a frame, connectPortal resolves at once and every call still answe
     online.join('ABC234'),
     online.start(),
     online.result([0, 1]),
+    online.result([0, 1], { draw: true }),
   ])
     assert.deepEqual(await call, { ok: false, reason: 'not_in_portal' });
   online.ready();
@@ -583,6 +584,57 @@ test('online play: requests, messages to other players and room events', async (
       ['left', { slot: 1 }],
       ['end', { reason: 'connection' }],
     ]);
+  });
+});
+
+test('online results preserve ranking and abandonment and report genuine draws', async () => {
+  const frame = portalFrame();
+  await inWindow(frame.game, async () => {
+    const { portal } = await connected(frame);
+    for (const [placements, options, expected] of [
+      [[1, 0], undefined, { placements: [1, 0] }],
+      [[0, 1], { draw: false }, { placements: [0, 1] }],
+      [[], undefined, { placements: [] }],
+      [[2, 0], { draw: true }, { placements: [2, 0], draw: true }],
+    ]) {
+      const reporting = portal.multiplayer.result(placements, options);
+      assert.deepEqual((await frame.answer('mp.result', { ok: true })).data, expected);
+      assert.deepEqual(await reporting, { ok: true });
+    }
+    const reporting = portal.multiplayer.result([0, 1], { draw: true });
+    await frame.answer('mp.result', { ok: false, error: { code: 'invalid' } });
+    assert.deepEqual(await reporting, { ok: false, reason: 'invalid' });
+  });
+});
+
+test('online results reject invalid slots and draw options before posting', async () => {
+  const frame = portalFrame();
+  await inWindow(frame.game, async () => {
+    const { portal } = await connected(frame);
+    const before = frame.sent.length;
+    for (const [placements, options] of [
+      [null, undefined],
+      [[0, 0], undefined],
+      [[0, -1], undefined],
+      [[0, 1.5], undefined],
+      [[0, NaN], undefined],
+      [Array(2), { draw: true }],
+      [[0, '1'], undefined],
+      [[0, 1], null],
+      [[0, 1], []],
+      [[0, 1], true],
+      [[0, 1], { draw: 'true' }],
+      [[0, 1], { draw: 1 }],
+      [[0, 1], { draw: null }],
+      [[], { draw: true }],
+      [[0], { draw: true }],
+    ]) {
+      assert.deepEqual(await portal.multiplayer.result(placements, options), {
+        ok: false,
+        reason: 'invalid',
+      });
+    }
+    assert.equal(frame.sent.length, before);
   });
 });
 

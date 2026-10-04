@@ -118,7 +118,7 @@ preface.push(
   `- Server: tools/serve.mjs on ${server.origin} (loopback), production CSP from infra/nginx/pixeljs.conf, production caching headers (no-cache, ETag, 304), uncompressed bodies${isolate ? '; COOP/COEP added for timer resolution (--isolate, not the production headers)' : ''}`,
 );
 const markdown = renderReport({
-  title: 'PixelJS 0.0.4 browser benchmarks',
+  title: 'PixelJS 0.0.5 browser benchmarks',
   env,
   settings,
   results,

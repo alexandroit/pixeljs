@@ -2,6 +2,12 @@
 
 All notable changes to `@pixeljs/core` and `@pixeljs/create` are documented here. Both packages share one version number.
 
+## 0.0.5 — 2026-10-04
+
+- `portal.multiplayer.result(placements, { draw: true })` reports a genuine draw: every player present at the start shares first place. The portal checks the complete starting roster and rejects incomplete draws; ordinary ordered results and empty abandoned results retain their meanings.
+- Invalid result slots and draw options resolve with `reason: 'invalid'` before a request is posted.
+- The `board` starter reports drawn games as draws instead of ranking one player first.
+
 ## 0.0.4 — 2026-10-03
 
 Games can now be published on the PixelJS portal at pixeljs.com.

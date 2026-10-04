@@ -1,6 +1,6 @@
 {
   "name": "@pixeljs/core",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "An independent C17/WebAssembly pixel engine for JavaScript and TypeScript: indexed graphics, tilemaps, bitmap text, input and an AudioWorklet synthesizer.",
   "keywords": [
     "pixel-art",

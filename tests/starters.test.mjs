@@ -380,7 +380,10 @@ function onlinePair(launch = { mode: 'online' }) {
           if (other.me !== me && (options.to === undefined || options.to === other.me))
             other.handlers.get('message')?.({ from: me, data: structuredClone(data) });
       },
-      result: async (placements) => (calls.push(['result', placements]), { ok: true }),
+      result: async (placements, options) => (
+        calls.push(['result', placements, options]),
+        { ok: true }
+      ),
       leave: () => calls.push(['leave']),
       on(event, handler) {
         handlers.set(event, handler);
@@ -439,6 +442,7 @@ test('online play: the host referees every move and both games agree', async () 
     const outcome = result(host.online.state);
     const report = host.calls.filter((call) => call[0] === 'result').at(-1);
     assert.deepEqual(report[1], outcome.winner === 1 ? [1, 0] : [0, 1]);
+    assert.deepEqual(report[2], { draw: outcome.draw === true });
     assert.equal(guest.calls.filter((call) => call[0] === 'result').length, 0);
     // A private room returns to its lobby: the host starts the rematch.
     emit('room', (me) => room(me));
@@ -450,6 +454,23 @@ test('online play: the host referees every move and both games agree', async () 
     await flush();
     assert.deepEqual(host.calls.at(-1), ['start']);
   }
+});
+
+test('online play: a drawn board gives neither player a fabricated win', () => {
+  const { players, room, emit } = onlinePair();
+  const [host, guest] = players;
+  emit('start', (me) => ({ ...room(me, 'playing'), seed: 11 }));
+  for (const move of [0, 1, 2, 4, 3, 5, 7, 6, 8]) {
+    const mover = host.online.canPlay() ? host : guest;
+    mover.online.play(move);
+    assert.deepEqual(guest.online.state, host.online.state);
+  }
+  assert.deepEqual(result(host.online.state), { over: true, draw: true });
+  assert.deepEqual(
+    host.calls.filter((call) => call[0] === 'result'),
+    [['result', [0, 1], { draw: true }]],
+  );
+  assert.equal(guest.calls.filter((call) => call[0] === 'result').length, 0);
 });
 
 test('online play: moves out of turn, illegal moves and forged states are ignored', () => {

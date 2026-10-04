@@ -22,7 +22,7 @@ export interface PortalOptions {
    * Without them, the portal grants every reviewed capability.
    */
   capabilities?: readonly PortalCapability[];
-  /** The engine and its version, for example `'@pixeljs/core@0.0.4'`. */
+  /** The engine and its version, for example `'@pixeljs/core@0.0.5'`. */
   engine?: string;
 }
 
@@ -231,8 +231,12 @@ export interface Multiplayer {
   ready(ready?: boolean): void;
   /** Sends any JSON value to every other player, or to the player in slot `to`. */
   send(data: unknown, options?: { to?: number }): void;
-  /** The host reports the final placements: player slots, best first. */
-  result(placements: readonly number[]): Promise<MultiplayerResult>;
+  /**
+   * The host reports player slots, best first. For a draw, list every slot present
+   * at the start (at least two) with `draw: true`; all share first place.
+   * An empty list without `draw` abandons the match without recording a result.
+   */
+  result(placements: readonly number[], options?: { draw?: boolean }): Promise<MultiplayerResult>;
   /** Leaves the room or the queue. */
   leave(): void;
   /** Listens to a room event; returns a function that stops listening. */

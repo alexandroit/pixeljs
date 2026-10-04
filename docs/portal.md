@@ -195,12 +195,15 @@ online.on('end', ({ reason }) => backToMenu());
 if (online.available) await online.find({ mode: 'versus' }); // or online.host() for a private room
 online.send({ t: 'move', move }, { to: host }); // to one slot (the host's), or to everyone
 await online.result([winner, loser]); // the host reports the slots, best first
+// For a draw instead (requires @pixeljs/core 0.0.5 or newer):
+await online.result(startingSlots, { draw: true });
 ```
 
 - **Slots** number the players of a room; `me` is this player's slot and `host` the host's. When the host leaves, the next player becomes host and every game receives a new `room` event.
 - **The seed** of a match is the same for every player. `createRandom(seed)` uses only 32-bit integer arithmetic, so it gives the same numbers in every browser: use it for everything random in a match, such as who starts. It is not cryptographic.
 - **Keep the games in step.** The portal relays messages and runs no game logic. In a turn-based game the host's game can be the referee, as in the `board` starter: the other player sends `{ t: 'move', move }` to the host, which checks the move against the rules, applies it and sends the new state to everyone. In a game where everyone plays the same world, games exchange only what the others need to see.
 - **Stay within the limits** of the manifest: messages above `max_message_bytes` or beyond `max_messages_per_second` are dropped. Send small messages at a steady rate, and never free text: players must not be able to chat.
+- **Results.** The host reports each slot at most once. Ordered placements remain best first. For a draw, pass `{ draw: true }` and every slot present when the match started (at least two, including players who later left); everyone shares first place. This requires a portal with draw support. `result([])` without `draw` abandons the match without a reported result or match rewards. Invalid slots or draw options answer `{ ok: false, reason: 'invalid' }`.
 - After `result()`, a private room returns to its lobby, where the host can `start()` a rematch; quick-match players `find()` again.
 
 ## Build and upload

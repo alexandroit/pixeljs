@@ -213,8 +213,26 @@ export function connectPortal(options: PortalOptions = {}): Promise<Portal> {
       send(data: unknown, options: { to?: number } = {}): void {
         send('mp.send', { data, to: options.to });
       },
-      result(placements: readonly number[]): Promise<MultiplayerResult> {
-        return multiplayerRequest('mp.result', { placements });
+      result(
+        placements: readonly number[],
+        options: { draw?: boolean } = {},
+      ): Promise<MultiplayerResult> {
+        if (
+          !Array.isArray(placements) ||
+          [...placements].some((slot) => !Number.isSafeInteger(slot) || slot < 0) ||
+          new Set(placements).size !== placements.length ||
+          options === null ||
+          typeof options !== 'object' ||
+          Array.isArray(options) ||
+          (options.draw !== undefined && typeof options.draw !== 'boolean') ||
+          (options.draw === true && placements.length < 2)
+        ) {
+          return Promise.resolve({ ok: false, reason: 'invalid' });
+        }
+        return multiplayerRequest('mp.result', {
+          placements,
+          ...(options.draw === true ? { draw: true } : {}),
+        });
       },
       leave(): void {
         send('mp.leave', {});

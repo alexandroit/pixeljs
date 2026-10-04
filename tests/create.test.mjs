@@ -239,7 +239,7 @@ test('cli binary executes correctly for help, version and scaffolding', async ()
     child.stdout.on('data', (d) => (out += d.toString()));
     child.on('close', (code) => (code === 0 ? res(out) : rej(new Error(`Exit code ${code}`))));
   });
-  assert.ok(versionOut.includes('@pixeljs/create v0.0.4'));
+  assert.ok(versionOut.includes('@pixeljs/create v0.0.5'));
 
   // Test binary scaffold in temp dir
   const tempDir = await mkdtemp(join(tmpdir(), 'pixeljs-cli-test-'));

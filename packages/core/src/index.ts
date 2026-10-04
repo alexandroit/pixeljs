@@ -51,4 +51,4 @@ export type {
   CaptureOptions,
   RecordingOptions,
 } from './api/types.js';
-export const version = '0.0.4';
+export const version = '0.0.5';

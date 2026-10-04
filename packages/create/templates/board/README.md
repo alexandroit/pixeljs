@@ -53,7 +53,7 @@ On PixelJS, the portal shows a button for each of the `play_modes` in `pixeljs.j
 
 ## Online play
 
-The portal finds the other player (quick match) or opens a private room with an invite code and link, and shows its own waiting and room screens. The host's game is the referee: the guest sends `{ t: 'move', move }` to the host, which checks it with `legalMoves()`, applies it and sends `{ t: 'state', state }` to both games. The room's seed decides who starts. After a game, the host reports the result; in a private room the host can then start a rematch. When a player leaves or the room closes, the game says so.
+The portal finds the other player (quick match) or opens a private room with an invite code and link, and shows its own waiting and room screens. The host's game is the referee: the guest sends `{ t: 'move', move }` to the host, which checks it with `legalMoves()`, applies it and sends `{ t: 'state', state }` to both games. The room's seed decides who starts. After a game, the host reports the result (a draw gives both players equal first place); in a private room the host can then start a rematch. When a player leaves or the room closes, the game says so.
 
 To try it, publish the game in the studio and open its preview in two browser tabs: create a private room in one and join it from the other with the code.
 
