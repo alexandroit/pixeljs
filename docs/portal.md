@@ -34,7 +34,7 @@ npm create @pixeljs@latest my-game -- --template board    # two players: solo, l
 ```
 
 - `manifest_version`: `2`.
-- `min_age`: `0` (Everyone), `10` (Everyone 10+) or `13` (Teen); it becomes the game's age rating. `18` is accepted only for simulated casino games, and adult content is not accepted.
+- `min_age`: `0` (Everyone), `10` (Everyone 10+) or `13` (Teen); it becomes the game's age rating. Simulated casino games are always `13`, and adult content is not accepted.
 - `capabilities`: what the game uses, among `pause`, `mute`, `levels`, `scores`, `achievements`, `save`, `level-select` and `multiplayer`. The portal grants them once the game is reviewed.
 
 The sections below add `levels`, `leaderboards`, `achievements`, `save`, `play_modes` and `multiplayer`. Optional fields such as `width`, `height`, `inputs` and `controls_md` describe the game on its page; the [developer guide](https://pixeljs.com/developers) lists every field and limit. Ids of levels, leaderboards and achievements are permanent once the game is published: add new ids instead of renaming old ones.
